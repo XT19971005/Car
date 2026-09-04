@@ -145,11 +145,14 @@ let world = new THREE.Group(); world.matrixAutoUpdate = false; world.updateMatri
 let worldGeneration = 0;
 let sceneryClaims = [];
 
-const assetBase = '/assets/kenney-selected/racing-kit/Models/OBJ%20format/';
-const roadsBase = '/assets/kenney-selected/city-kit-roads/Models/OBJ%20format/';
-const industrialBase = '/assets/kenney-selected/city-kit-industrial/Models/OBJ%20format/';
-const suburbanBase = '/assets/kenney-selected/city-kit-suburban/Models/OBJ%20format/';
-const natureBase = '/assets/kenney-selected/nature-kit/Models/OBJ%20format/';
+// Vite 的 BASE_URL 在本地为站点根目录，在 GitHub Pages 中为当前发布目录。
+// 所有 public 资源都从这里派生，避免部署到 /Car/ 后仍错误请求站点根目录 /assets。
+const publicBase = import.meta.env.BASE_URL;
+const assetBase = `${publicBase}assets/kenney-selected/racing-kit/Models/OBJ%20format/`;
+const roadsBase = `${publicBase}assets/kenney-selected/city-kit-roads/Models/OBJ%20format/`;
+const industrialBase = `${publicBase}assets/kenney-selected/city-kit-industrial/Models/OBJ%20format/`;
+const suburbanBase = `${publicBase}assets/kenney-selected/city-kit-suburban/Models/OBJ%20format/`;
+const natureBase = `${publicBase}assets/kenney-selected/nature-kit/Models/OBJ%20format/`;
 const kitTemplateCache = new Map();
 
 function getKitTemplate(base, stem) {
@@ -412,9 +415,9 @@ function addFallbackRacingCar() {
 }
 const carLoader = new GLTFLoader();
 // 换回上一版使用的 Kenney Car Kit 运动轿车，比例更适合当前第三人称追车镜头。
-const primaryCarPath = '/assets/kenney-selected/car-kit/Models/GLB%20format/sedan-sports.glb';
+const primaryCarPath = `${publicBase}assets/kenney-selected/car-kit/Models/GLB%20format/sedan-sports.glb`;
 const fallbackCarLoader = new GLTFLoader();
-fallbackCarLoader.setPath('/assets/kenney-selected/car-kit/Models/GLB%20format/');
+fallbackCarLoader.setPath(`${publicBase}assets/kenney-selected/car-kit/Models/GLB%20format/`);
 carLoader.load(
   primaryCarPath,
   (gltf) => fitPlayerCar(gltf.scene),
