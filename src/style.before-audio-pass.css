@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,800&family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+:root { font-family: "Noto Sans SC", Inter, system-ui, sans-serif; color: #f7f4ef; background: #111419; --orange: #ff4d19; --ink: #121419; }
+* { box-sizing: border-box; }
+html, body, #game { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+button { font: inherit; color: inherit; }
+canvas { display: block; }
+.hidden { display: none !important; }
+
+#front-end { position: fixed; inset: 0; z-index: 20; overflow: hidden; background: linear-gradient(105deg, #090b0f 0%, #11151b 58%, #0b0d11 100%); }
+.menu-grid { position: absolute; inset: 0; opacity: .23; background-image: linear-gradient(#fff1 1px, transparent 1px), linear-gradient(90deg, #fff1 1px, transparent 1px); background-size: 62px 62px; transform: perspective(500px) rotateX(56deg) scale(1.5) translateY(20%); mask-image: linear-gradient(to bottom, transparent 4%, #000 50%, transparent 96%); }
+.menu-glow { position: absolute; width: 68vw; height: 68vw; right: -25vw; bottom: -41vw; border-radius: 50%; background: radial-gradient(circle, #ff451f66, #ff451f0a 42%, transparent 68%); }
+.menu-brand { position: absolute; z-index: 3; left: clamp(22px, 4vw, 70px); right: clamp(22px, 4vw, 70px); top: 30px; height: 58px; display: flex; align-items: center; gap: 13px; border-bottom: 1px solid #fff2; }
+.logo-mark { width: 42px; height: 42px; display: grid; place-items: center; background: var(--orange); color: white; transform: skew(-9deg); font: 900 18px "Barlow Condensed"; }
+.menu-brand div:nth-child(2) { display: flex; flex-direction: column; }
+.menu-brand strong { font: 800 20px/1 "Barlow Condensed", sans-serif; letter-spacing: .09em; }
+.menu-brand span, .menu-brand p { font: 600 9px/1.5 "Barlow Condensed"; letter-spacing: .18em; color: #a9adb4; }
+.menu-brand p { margin-left: auto; }
+.menu-screen { position: absolute; inset: 105px clamp(22px, 6vw, 100px) 58px; z-index: 2; display: none; align-items: center; gap: 7vw; opacity: 0; transform: translateX(25px); }
+.menu-screen.active { display: flex; animation: screen-in .28s ease-out forwards; }
+@keyframes screen-in { to { opacity: 1; transform: translateX(0); } }
+.screen-copy { width: 38%; max-width: 520px; }
+.eyebrow { color: var(--orange); letter-spacing: .26em; font: 800 12px "Barlow Condensed"; }
+.screen-copy h1 { margin: 10px 0 22px; font: 900 clamp(53px, 6.6vw, 102px)/.82 "Barlow Condensed"; letter-spacing: -.035em; text-transform: uppercase; }
+.screen-copy h1 em { color: transparent; -webkit-text-stroke: 1px #ffffff88; font-style: italic; }
+.lead { max-width: 410px; color: #aeb2b9; line-height: 1.8; font-size: 13px; }
+.menu-content { width: min(680px, 58%); margin-left: auto; }
+.menu-content.wide { width: 100%; }
+.section-heading { display: grid; grid-template-columns: 42px auto 1fr; align-items: center; gap: 13px; margin-bottom: 18px; border-bottom: 3px solid white; padding-bottom: 9px; }
+.section-heading span { color: var(--orange); font: 900 23px "Barlow Condensed"; }
+.section-heading h2 { margin: 0; font-size: 20px; }
+.section-heading small { text-align: right; color: #8d9299; letter-spacing: .18em; font: 700 10px "Barlow Condensed"; }
+.select-row, .option-row { width: 100%; min-height: 77px; margin: 0 0 8px; padding: 0 18px 0 22px; display: grid; grid-template-columns: 1.1fr 1.45fr auto; align-items: center; gap: 18px; border: 1px solid #ffffff1f; border-left: 4px solid #ffffff2a; background: #ffffff08; text-align: left; cursor: pointer; transition: .18s; }
+.select-row:hover, .select-row.selected { border-left-color: var(--orange); background: linear-gradient(90deg, #ff4d1928, #ffffff0a); transform: translateX(5px); }
+.select-row b { font: 800 20px "Barlow Condensed"; letter-spacing: .05em; }
+.select-row span { color: #969ba4; font-size: 11px; }
+.select-row i { padding: 6px 10px; background: var(--orange); font-style: normal; font-size: 10px; font-weight: 800; }
+.select-row.locked { opacity: .38; cursor: not-allowed; }
+.select-row.locked i { background: #555a62; }
+.circuit-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.circuit-card { padding: 0; overflow: hidden; border: 1px solid #fff2; border-bottom: 4px solid #555b64; background: #15191f; text-align: left; cursor: pointer; transition: .2s; }
+.circuit-card:hover, .circuit-card.selected { border-bottom-color: var(--orange); transform: translateY(-4px); }
+.circuit-card.locked { opacity: .44; cursor: not-allowed; }
+.circuit-art { position: relative; height: min(24vh, 205px); overflow: hidden; background-color: #272e37; background-image: linear-gradient(25deg, #283c32, #547563); }
+.circuit-art::before, .circuit-art::after { content: ""; position: absolute; inset: 48% -10% -30%; background: #142019; transform: skewY(-8deg); }
+.circuit-art::after { inset: 65% -20% -35%; background: #385342; transform: skewY(7deg); }
+.circuit-art.coast { background-image: linear-gradient(145deg, #7996a1, #294955); }
+.circuit-art.night { background-image: linear-gradient(145deg, #2c2345, #11131e); }
+.circuit-art.forest { background-image: linear-gradient(145deg, #425b3e, #14231d); }
+.circuit-art.metro { background-image: linear-gradient(145deg, #3d3a56, #151721); }
+.circuit-art.monza { background-image: linear-gradient(145deg, #507949, #203d2e); }
+.circuit-art.spa { background-image: linear-gradient(145deg, #496c60, #1b3440); }
+.circuit-art.silverstone { background-image: linear-gradient(145deg, #777d72, #303942); }
+.circuit-art.nurburgring { background-image: linear-gradient(145deg, #3e6246, #202d32); }
+.circuit-art span { position: absolute; z-index: 2; top: 12px; left: 12px; padding: 5px 9px; background: var(--orange); font-size: 9px; font-weight: 800; }
+.circuit-art svg { position: absolute; z-index: 3; inset: 12% 8%; width: 84%; height: 76%; fill: none; stroke: #fff; stroke-width: 3; filter: drop-shadow(0 2px 5px #0008); }
+.circuit-card > div:last-child { padding: 15px 17px 18px; }
+.circuit-card small { color: var(--orange); font-size: 9px; letter-spacing: .1em; }
+.circuit-card strong { display: block; margin: 3px 0; font: 800 24px "Barlow Condensed"; }
+.circuit-card p { margin: 0; color: #8f949c; font-size: 10px; }
+.back-button, .primary-button { margin-top: 18px; border: 0; padding: 12px 20px; background: transparent; color: #a7abb1; cursor: pointer; font-weight: 700; }
+.back-button:hover { color: white; }
+.primary-button { margin-left: auto; background: var(--orange); color: white; }
+.menu-actions { display: flex; }
+.option-row { grid-template-columns: 1fr auto; }
+.option-row:hover:not(.static) { border-left-color: var(--orange); background: #ff4d1919; }
+.option-row span { color: #aeb2b9; font-size: 12px; }
+.option-row strong { display: flex; align-items: center; gap: 22px; }
+.option-row b { min-width: 80px; text-align: center; font-size: 16px; }
+.option-row i { color: var(--orange); font: 900 21px "Barlow Condensed"; font-style: normal; }
+.briefing { border-top: 1px solid #fff2; }
+.briefing div { min-height: 56px; padding: 0 15px; display: flex; align-items: center; border-bottom: 1px solid #fff2; }
+.briefing span { color: #8e949c; font-size: 11px; }
+.briefing strong { margin-left: auto; font: 700 16px "Barlow Condensed"; letter-spacing: .06em; }
+.launch-button { width: 100%; margin-top: 20px; padding: 18px 22px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; border: 0; background: linear-gradient(100deg, #c92317, var(--orange)); cursor: pointer; box-shadow: 0 12px 40px #d92b1736; text-align: left; }
+.launch-button span { font-size: 9px; letter-spacing: .16em; opacity: .75; }
+.launch-button strong { font: 900 27px "Barlow Condensed"; text-align: center; }
+.launch-button i { font: 900 28px "Barlow Condensed"; font-style: normal; }
+.menu-footer { position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; height: 38px; padding: 0 clamp(22px, 4vw, 70px); display: flex; align-items: center; gap: 34px; border-top: 1px solid #fff2; color: #777d85; font-size: 9px; letter-spacing: .1em; }
+
+#race-ui { position: fixed; inset: 0; z-index: 10; pointer-events: none; text-shadow: 0 2px 5px #000b; }
+.race-topbar { height: 56px; margin: 18px 24px; display: flex; align-items: center; border-bottom: 1px solid #fff4; }
+.race-id { display: flex; align-items: baseline; gap: 10px; }
+.race-id i { width: 6px; height: 27px; background: var(--orange); transform: skew(-10deg); }
+.race-id span { font: 900 21px "Barlow Condensed"; letter-spacing: .07em; }
+.race-id small { color: #f0f0f0a8; font: 700 9px "Barlow Condensed"; letter-spacing: .2em; }
+.top-actions { display: flex; gap: 6px; margin-left: auto; pointer-events: auto; }
+.icon-button { border: 1px solid #fff3; padding: 8px 12px; background: #101419b8; cursor: pointer; font-size: 11px; backdrop-filter: blur(8px); }
+.icon-button:hover { border-color: var(--orange); }
+.icon-button.danger { color: #ff9b83; }
+kbd { margin-left: 5px; color: #ffffff88; font-size: 8px; }
+.timing-panel, .track-panel { position: absolute; top: 92px; left: 24px; width: 245px; padding: 14px 16px; border-left: 3px solid var(--orange); background: linear-gradient(90deg, #0b0e12dc, #10131892); backdrop-filter: blur(8px); }
+.panel-kicker { margin: 0 0 6px; color: #959aa1; font-size: 9px; letter-spacing: .16em; }
+.position-row { display: flex; align-items: baseline; gap: 11px; border-bottom: 1px solid #fff2; padding-bottom: 8px; }
+.position-row strong { font: 900 33px "Barlow Condensed"; color: var(--orange); }
+.position-row span { font-size: 11px; }
+.timing-panel dl { margin: 7px 0 0; }
+.timing-panel dl div { display: flex; padding: 4px 0; }
+.timing-panel dt { color: #a6aab0; font-size: 10px; }
+.timing-panel dd { margin-left: auto; font: 700 13px "Barlow Condensed"; letter-spacing: .05em; }
+.track-panel { left: auto; right: 24px; width: 225px; padding: 10px 12px; border-left: 0; border-right: 3px solid var(--orange); }
+.minimap { height: 116px; }
+.minimap svg { width: 100%; height: 100%; overflow: visible; }
+.map-shadow { fill: none; stroke: #000b; stroke-width: 13; }
+.map-line { fill: none; stroke: #f3f4ef; stroke-width: 5; }
+#map-dot { fill: var(--orange); stroke: white; stroke-width: 2; }
+.track-name { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; border-top: 1px solid #fff2; padding-top: 8px; }
+.track-name span { color: var(--orange); font: 900 20px "Barlow Condensed"; }
+.track-name strong { font-size: 12px; }
+.track-name small { color: #999fa7; font-size: 8px; }
+.telemetry { position: absolute; left: 50%; bottom: 20px; width: min(455px, 48vw); transform: translateX(-50%); padding: 12px 16px 11px; background: linear-gradient(110deg, #080b0fea, #171b20d8); border-top: 2px solid #fff7; clip-path: polygon(5% 0, 95% 0, 100% 28%, 96% 100%, 4% 100%, 0 28%); }
+.rpm-scale { display: flex; justify-content: space-between; color: #a3a7ac; font: 700 8px "Barlow Condensed"; }
+.rpm-track { height: 8px; margin: 3px 0 7px; background: #ffffff1d; overflow: hidden; }
+#rpm-fill { display: block; width: 0%; height: 100%; background: linear-gradient(90deg, #efb329 0 62%, var(--orange) 79%, #ef2323 100%); transition: width .08s linear; }
+.drive-data { display: flex; align-items: center; justify-content: center; gap: 23px; }
+.gear { display: flex; align-items: center; gap: 8px; }
+.gear small { color: #92969c; font: 700 8px "Barlow Condensed"; writing-mode: vertical-rl; }
+.gear strong { min-width: 38px; font: 900 42px/.8 "Barlow Condensed"; color: var(--orange); }
+.speed { display: flex; align-items: baseline; gap: 7px; }
+.speed strong { font: 900 45px/.8 "Barlow Condensed"; font-variant-numeric: tabular-nums; }
+.speed span { color: #9da2a8; font: 700 9px "Barlow Condensed"; letter-spacing: .12em; }
+#surface-status { margin-top: 7px; text-align: center; color: #8e949b; font-size: 8px; letter-spacing: .12em; }
+#status { position: absolute; left: 25px; bottom: 24px; color: #e3e5e8; font-size: 10px; letter-spacing: .05em; }
+#countdown { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; pointer-events: none; font: 900 clamp(74px, 14vw, 180px) "Barlow Condensed"; font-style: italic; color: white; text-shadow: 9px 9px 0 #e23819, 0 10px 40px #000; opacity: 0; transform: scale(.72) skew(-7deg); transition: opacity .14s, transform .14s; }
+#countdown.show { opacity: 1; transform: scale(1) skew(-7deg); }
+#pause-overlay { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: #080a0dcf; backdrop-filter: blur(9px); }
+.pause-card { width: min(390px, calc(100% - 32px)); padding: 30px; border-top: 4px solid var(--orange); background: #14171c; text-align: center; }
+.pause-card p { margin: 0; color: var(--orange); font-size: 10px; letter-spacing: .2em; }
+.pause-card h2 { margin: 3px 0 18px; font: 900 52px "Barlow Condensed"; }
+.pause-card button { width: 100%; margin: 5px 0; }
+
+@media (max-width: 760px) {
+  .menu-brand p, .screen-copy, .menu-footer { display: none; }
+  .menu-screen { inset: 96px 18px 24px; }
+  .menu-content, .menu-content.wide { width: 100%; }
+  .circuit-grid { grid-template-columns: 1fr; }
+  .circuit-card:not(.selected) { display: none; }
+  .circuit-art { height: 175px; }
+  .select-row { grid-template-columns: 1fr auto; }
+  .select-row span { display: none; }
+  .track-panel { display: none; }
+  .timing-panel { left: 14px; top: 78px; width: 210px; }
+  .race-topbar { margin: 10px 14px; }
+  .race-id small, .icon-button kbd, #menu-button { display: none; }
+  .telemetry { width: min(92vw, 455px); bottom: 16px; }
+  #status { display: none; }
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .circuit-grid { grid-template-columns: repeat(2, 1fr); }
+  .circuit-art { height: 145px; }
+}

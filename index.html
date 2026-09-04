@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Apex Ridge — Low Poly Racing</title>
+  </head>
+  <body>
+    <div id="game"></div>
+
+    <div id="race-ui" class="hidden">
+      <header class="race-topbar">
+        <div class="race-id"><i></i><span>APEX RIDGE</span><small>TIME ATTACK</small></div>
+        <div class="top-actions">
+          <button id="view-button" class="icon-button" type="button">视角 <kbd>C</kbd></button>
+          <button id="pause-button" class="icon-button" type="button">暂停 <kbd>ESC</kbd></button>
+          <button id="menu-button" class="icon-button danger" type="button">菜单</button>
+        </div>
+      </header>
+
+      <aside class="timing-panel">
+        <p class="panel-kicker">赛事实时数据</p>
+        <div class="position-row"><strong>P1</strong><span>单人计时赛</span></div>
+        <dl>
+          <div><dt>圈数</dt><dd id="lap">0 / 3</dd></div>
+          <div><dt>当前</dt><dd id="time">00:00.000</dd></div>
+          <div><dt>最佳</dt><dd id="best-time">--:--.---</dd></div>
+        </dl>
+      </aside>
+
+      <aside class="track-panel">
+        <div class="minimap" aria-label="赛道缩略图">
+          <svg viewBox="0 0 220 135" role="img">
+            <path class="map-shadow" d="" />
+            <path class="map-line" d="" />
+            <circle id="map-dot" cx="22" cy="104" r="4" />
+          </svg>
+        </div>
+        <div class="track-name"><span id="hud-track-number">01</span><strong id="hud-track-name">蒙扎</strong><small id="hud-track-distance">5.793 KM</small></div>
+      </aside>
+
+      <div class="telemetry">
+        <div class="rpm-scale"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>
+        <div class="rpm-track"><i id="rpm-fill"></i></div><div class="rpm-readout"><span id="rpm-value">950 RPM</span><em>AUTO SHIFT</em></div>
+        <div class="drive-data">
+          <div class="gear"><small>GEAR</small><strong id="gear">N</strong></div>
+          <div class="speed"><strong id="speed">0</strong><span>KM/H</span></div>
+        </div>
+        <div id="surface-status">赛道状态 · 干燥</div>
+      </div>
+
+      <div id="status">W 加速 · S 刹车/倒车 · A/D 转向 · R 回到最近赛道 · C 切换视角（近景 / 远景）</div>
+    </div>
+
+    <div id="countdown" aria-live="polite"></div>
+
+    <main id="front-end">
+      <div class="menu-grid"></div>
+      <div class="menu-glow"></div>
+      <header class="menu-brand">
+        <div class="logo-mark">AR</div>
+        <div><strong>APEX RIDGE</strong><span>LOW POLY MOTORSPORT</span></div>
+        <p>BUILD 0.4 · THREE.JS PROTOTYPE</p>
+      </header>
+
+      <section class="menu-screen active" data-screen="mode">
+        <div class="screen-copy">
+          <p class="eyebrow">WELCOME, DRIVER</p>
+          <h1>驾驭山脊<br><em>挑战极限</em></h1>
+          <p class="lead">四条传奇欧洲赛道，一台俱乐部赛车，一场干净利落的单人计时赛。</p>
+        </div>
+        <div class="menu-content">
+          <div class="section-heading"><span>01</span><h2>选择比赛模式</h2><small>SELECT MODE</small></div>
+          <button class="select-row selected" data-next="circuit" type="button">
+            <b>单人计时赛</b><span>3 圈 · 与自己的最佳时间竞争</span><i>开始选择</i>
+          </button>
+          <button class="select-row locked" type="button" disabled><b>快速比赛</b><span>AI 对手 · 后续版本开放</span><i>锁定</i></button>
+          <button class="select-row locked" type="button" disabled><b>在线追逐</b><span>多人竞速 · 规划中</span><i>锁定</i></button>
+        </div>
+      </section>
+
+      <section class="menu-screen" data-screen="circuit">
+        <div class="menu-content wide">
+          <div class="section-heading"><span>02</span><h2>选择赛道</h2><small>SELECT CIRCUIT</small></div>
+          <div class="circuit-grid">
+            <button class="circuit-card selected" data-track="monza" data-next="options" type="button">
+              <div class="circuit-art monza"><span>可比赛</span><svg viewBox="0 0 180 100"><path d="M61 91 L59 27 Q58 12 69 10 Q79 13 70 25 Q56 36 49 52 Q42 66 48 77 Q53 87 66 82 L95 51 L122 23 Q135 13 148 18 Q160 23 153 31 L126 52 L102 76 Q88 91 61 91Z"/></svg></div>
+              <div><small>意大利 · 蒙扎</small><strong>蒙扎</strong><p>5.793 KM · 11 弯 · 极速长直道</p></div>
+            </button>
+            <button class="circuit-card" data-track="spa" data-next="options" type="button">
+              <div class="circuit-art spa"><span>可比赛</span><svg viewBox="0 0 180 100"><path d="M112 88 Q140 88 150 73 Q157 61 143 55 L128 60 Q115 67 103 58 L119 40 Q131 27 119 16 Q107 8 94 18 L76 35 Q61 49 48 43 Q31 35 22 50 Q15 65 31 77 Q46 87 62 78 L80 67 Q92 60 99 72 Q101 86 112 88Z"/></svg></div>
+              <div><small>比利时 · 阿登</small><strong>斯帕-弗朗科尔尚</strong><p>7.004 KM · 19 弯 · Eau Rouge</p></div>
+            </button>
+            <button class="circuit-card" data-track="silverstone" data-next="options" type="button">
+              <div class="circuit-art silverstone"><span>可比赛</span><svg viewBox="0 0 180 100"><path d="M105 14 Q135 13 145 25 L139 46 Q134 58 119 53 L104 43 Q94 37 83 45 L67 65 Q54 82 35 77 Q22 71 26 55 Q31 42 48 40 L68 37 Q83 32 76 21 Q73 12 85 11 Q96 10 105 14Z"/></svg></div>
+              <div><small>英国 · 北安普敦郡</small><strong>银石</strong><p>5.890 KM · 18 弯 · 高速连续弯</p></div>
+            </button>
+            <button class="circuit-card" data-track="nurburgring" data-next="options" type="button">
+              <div class="circuit-art nurburgring"><span>可比赛</span><svg viewBox="0 0 180 100"><path d="M116 18 Q142 17 151 29 Q157 42 141 46 L116 43 Q105 39 96 48 L91 63 Q84 77 69 83 Q53 91 37 82 Q25 73 32 61 Q40 51 53 54 L68 61 Q78 65 81 54 L74 43 Q66 31 79 24 Q94 16 116 18Z"/></svg></div>
+              <div><small>德国 · 艾费尔</small><strong>纽博格林 GP</strong><p>5.148 KM · 15 弯 · 高低落差</p></div>
+            </button>
+          </div>
+          <button class="back-button" data-back="mode" type="button">← 返回模式</button>
+        </div>
+      </section>
+
+      <section class="menu-screen" data-screen="options">
+        <div class="menu-content">
+          <div class="section-heading"><span>03</span><h2>比赛设置</h2><small>RACE OPTIONS</small></div>
+          <button class="option-row" id="laps-option" type="button"><span>比赛圈数</span><strong><i>−</i><b id="laps-value">3 圈</b><i>+</i></strong></button>
+          <button class="option-row" id="assist-option" type="button"><span>驾驶辅助</span><strong><b id="assist-value">标准</b><i>›</i></strong></button>
+          <button class="option-row static" type="button"><span>天气 / 路况</span><strong><b>晴朗 · 干地</b></strong></button>
+          <div class="menu-actions"><button class="back-button" data-back="circuit" type="button">← 返回</button><button class="primary-button" data-next="ready" type="button">确认设置 →</button></div>
+        </div>
+      </section>
+
+      <section class="menu-screen" data-screen="ready">
+        <div class="menu-content">
+          <div class="section-heading"><span>04</span><h2>准备发车</h2><small>READY TO LAUNCH</small></div>
+          <div class="briefing">
+            <div><span>比赛模式</span><strong>单人计时赛</strong></div>
+            <div><span>赛道</span><strong id="ready-track">蒙扎</strong></div>
+            <div><span>圈数</span><strong id="ready-laps">3 圈</strong></div>
+            <div><span>车辆</span><strong>KR-01 CLUBSPORT</strong></div>
+          </div>
+          <button id="start" class="launch-button" type="button"><span>启动引擎</span><strong>开始比赛</strong><i>→</i></button>
+          <button class="back-button" data-back="options" type="button">← 返回设置</button>
+        </div>
+      </section>
+      <footer class="menu-footer"><span>WASD / 方向键驾驶</span><span>R 回到最近赛道</span><span>C 切换视角（默认近景）</span></footer>
+    </main>
+
+    <div id="pause-overlay" class="hidden">
+      <div class="pause-card"><p>比赛暂停</p><h2>PAUSED</h2><button id="resume-button" class="primary-button" type="button">继续比赛</button><button id="quit-button" class="back-button" type="button">返回主菜单</button></div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
