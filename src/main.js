@@ -65,7 +65,7 @@ let activeCarSpec = CAR_OPTIONS[selectedCarKey];
 let totalLaps = 3;
 let assistMode = 0;
 let paused = false;
-let cameraMode = 1; // 默认近景第三人称；C 切换到远景
+let cameraMode = 0; // 默认近景第三人称；C 依次切换远景和车内
 let trackCurve;
 let trackLength = 1;
 let trackSamples = [];
@@ -617,14 +617,14 @@ function updateAutomaticTransmission(dt) {
   }
   if (engineAudio) engineAudio.lastGear = currentGear === 0 ? 'N' : String(currentGear);
 }
-const CAMERA_LABELS = ['远景', '近景', '车内'];
+const CAMERA_LABELS = ['近景', '远景', '车内'];
 function updateCameraButton() {
   const button = $('#view-button'); if (button) button.firstChild.textContent = `${CAMERA_LABELS[cameraMode]} `;
 }
 function beginRace() {
   // 每场新比赛都从近景第三人称开始；比赛中仍可用 C 切换远景或车内视角。
   if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
-  cameraMode = 1; updateCameraButton();
+  cameraMode = 0; updateCameraButton();
   started = true; finished = false; paused = false; countdownActive = true; elapsed = 0; lap = 0; speed = 0; resetCar(); startEngineAudio(); if (engineAudio) engineAudio.lastGear = 'N';
   frontEnd.classList.add('hidden'); raceUI.classList.remove('hidden'); pauseOverlay.classList.add('hidden');
   lapEl.textContent = `0 / ${totalLaps}`; bestTimeEl.textContent = bestTimes.has(selectedTrackKey) ? formatTime(bestTimes.get(selectedTrackKey)) : '--:--.---';
@@ -748,10 +748,10 @@ function updateCamera(dt) {
     camera.position.lerp(interiorPosition, 1 - Math.pow(.00001, dt)); camera.lookAt(interiorLook); return;
   }
   // 两个第三人称模式：近景仍把车完整留在画面下方，不再贴着车尾或引擎盖。
-  const distance = cameraMode === 0 ? 20.5 : 11.5;
-  const height = cameraMode === 0 ? 7.6 : 4.8;
+  const distance = cameraMode === 0 ? 11.5 : 20.5;
+  const height = cameraMode === 0 ? 4.8 : 7.6;
   const desired = car.position.clone().addScaledVector(forward, -distance); desired.y += height;
-  const look = car.position.clone().addScaledVector(forward, cameraMode === 0 ? 13.5 : 11.5); look.y += cameraMode === 0 ? 1.0 : .85;
+  const look = car.position.clone().addScaledVector(forward, cameraMode === 0 ? 11.5 : 13.5); look.y += cameraMode === 0 ? .85 : 1.0;
   camera.position.lerp(desired, 1 - Math.pow(.001, dt)); camera.lookAt(look);
 }
 const screens = [...document.querySelectorAll('.menu-screen')];
@@ -797,7 +797,7 @@ loadSelectedCar();
 openFrontEnd('mode');
 window.__THREE_GAME_DIAGNOSTICS__ = () => ({
   renderer: { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, dpr: renderer.getPixelRatio() },
-  state: { started, finished, paused, track: selectedTrackKey, car: selectedCarKey, lap, elapsed: Number(elapsed.toFixed(3)), speed: Number(speed.toFixed(2)), kmh: Math.round(Math.abs(speed) * SPEED_TO_KMH), gear: currentGear === 0 ? 'N' : currentGear, rpm: Math.round(engineRpm), throttle: Number(throttleInput.toFixed(2)), camera: ['far', 'near', 'cockpit'][cameraMode] },
+  state: { started, finished, paused, track: selectedTrackKey, car: selectedCarKey, lap, elapsed: Number(elapsed.toFixed(3)), speed: Number(speed.toFixed(2)), kmh: Math.round(Math.abs(speed) * SPEED_TO_KMH), gear: currentGear === 0 ? 'N' : currentGear, rpm: Math.round(engineRpm), throttle: Number(throttleInput.toFixed(2)), camera: ['near', 'far', 'cockpit'][cameraMode] },
   track: { width: trackWidth, worldScale, length: Number(trackLength.toFixed(1)), scenery: sceneryClaims.length },
 });
 function animate(now) {
