@@ -392,8 +392,10 @@ const TOP_SPEED_KMH = 302;
 const SPEED_TO_KMH = 3.2;
 const maxSpeed = TOP_SPEED_KMH / SPEED_TO_KMH;
 const reverseMaxSpeed = 6.0;
-// 起步加速度按俱乐部赛车标定：输入响应更快，0–100 km/h 约 4.5 秒，不再有“牛车”拖沓感。
-const launchAcceleration = 8.6;
+// 起步加速度按 GT 赛车重新标定：低速扭矩更饱满，0–100 km/h 约 3.1–3.4 秒。
+// 最高速仍由 maxSpeed 限制，增强只集中在起步和低速出弯，避免整段速度失控。
+const launchAcceleration = 12.4;
+const launchTorqueBoost = 1.2;
 const reverseAcceleration = 3.8;
 const brakeDeceleration = 17.5;
 const keys = new Set();
@@ -597,7 +599,8 @@ function update(dt) {
     return;
   }
   elapsed += dt; const throttle = actionHeld('throttle'); const reverse = actionHeld('brake');
-  throttleInput = THREE.MathUtils.damp(throttleInput, throttle ? 1 : 0, throttle ? 6.0 : 9.5, dt);
+  // 踩下 W 后更快建立油门压力，避免起步前半秒像“牛车”；松油门仍保留平滑回落。
+  throttleInput = THREE.MathUtils.damp(throttleInput, throttle ? 1 : 0, throttle ? 11.5 : 9.5, dt);
   brakeInput = THREE.MathUtils.damp(brakeInput, reverse ? 1 : 0, reverse ? 12 : 9, dt);
 
   // 轻量级车辆动力学：纵向驱动 + 侧向抓地 + 有惯性的转向。
@@ -619,9 +622,12 @@ function update(dt) {
     const activeGear = Math.max(1, currentGear);
     const gearForce = GEAR_DRIVE_FORCE[activeGear];
     const driveFalloff = 1 - .54 * Math.pow(speedRatio, 1.45);
+    const launchKmh = Math.abs(forwardSpeed) * SPEED_TO_KMH;
+    // 1 挡低速额外提供约 20% 起步扭矩，并在 80 km/h 前渐退，保证直线后段仍按档位拉开。
+    const lowSpeedTorque = activeGear === 1 ? THREE.MathUtils.lerp(launchTorqueBoost, 1, THREE.MathUtils.clamp(launchKmh / 80, 0, 1)) : 1;
     const shiftAge = elapsed - lastShiftElapsed;
     const clutchCoupling = shiftAge < .10 ? .22 : shiftAge < .28 ? .22 + .78 * ((shiftAge - .10) / .18) : 1;
-    velocity.addScaledVector(forwardBefore, launchAcceleration * gearForce * driveFalloff * throttleInput * clutchCoupling * dt);
+    velocity.addScaledVector(forwardBefore, launchAcceleration * gearForce * driveFalloff * lowSpeedTorque * throttleInput * clutchCoupling * dt);
   } else {
     // 松油门时保留发动机制动，但高速不会像撞墙一样停住。
     const coastDeceleration = .34 + 1.55 * speedRatio + .72 * speedRatio * speedRatio;
