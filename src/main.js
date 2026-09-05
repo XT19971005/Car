@@ -1232,12 +1232,11 @@ function updateAutomaticTransmission(dt) {
 }
 const CAMERA_LABELS = ['近景', '远景', '车内'];
 const CAMERA_MODE_KEYS = ['near', 'far', 'cockpit'];
-const COCKPIT_HORIZONTAL_FOV = THREE.MathUtils.degToRad(88);
 function updateCameraProjection() {
   const aspect = innerWidth / Math.max(1, innerHeight);
   camera.aspect = aspect;
-  // 车内视角锁定水平视场，超宽屏不会把座舱横向拉伸。
-  camera.fov = cameraMode === 2 ? THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(COCKPIT_HORIZONTAL_FOV / 2) / aspect)) : 60;
+  // 所有视角使用固定 60° 视野；只更新画布纵横比，不做动态 FOV 或速度拉伸。
+  camera.fov = 60;
   camera.updateProjectionMatrix();
 }
 function updateCameraButton() {
