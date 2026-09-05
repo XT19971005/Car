@@ -493,8 +493,9 @@ let steeringInput = 0;
 let steeringVisual = 0;
 // 统一驾驶约定：A/左箭头 = 左转（+1），D/右箭头 = 右转（-1）。
 // 车身横摆、前轮和方向盘都只消费这一份 steeringInput，避免三层各自反向。
-// 从驾驶员视角看，左转时方向盘盘面逆时针，对应局部 +Z 的正旋转。
-const STEERING_WHEEL_SIGN = 1;
+// 车辆和前轮的左/右约定已经正确；导入模型的盘面轴向与驾驶员视角相反，
+// 因此方向盘视觉旋转单独取反，保证左转时盘面向左、右转时盘面向右。
+const STEERING_WHEEL_SIGN = -1;
 // 车内视角默认使用左舵驾驶位；有真实方向盘的车辆会在加载后用模型坐标覆盖它。
 const DEFAULT_COCKPIT_WHEEL_LOCAL = new THREE.Vector3(-.44, .78, .64);
 const COCKPIT_DISPLAY_LIFT = .22;
