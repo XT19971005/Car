@@ -83,7 +83,7 @@ const TRACK_WORLD_SCALES = { monza: 5.0585, spa: 4.8424, silverstone: 4.0035, nu
 let worldScale = TRACK_WORLD_SCALES.monza;
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 4000);
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.03, 4000);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 // 2x DPR + 2048 阴影在集成显卡上会明显拖慢帧率；1.5x 仍保持清晰，同时给车辆和场景留出 GPU 余量。
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
@@ -392,6 +392,19 @@ function buildWorld(key) {
 let car = new THREE.Group(); scene.add(car);
 let playerCarModel = null;
 let carLoadGeneration = 0;
+// 车内视角使用一组轻量的座舱几何，不依赖车辆模型必须自带内饰；外部车身在该视角自动隐藏。
+const cockpit = new THREE.Group(); cockpit.visible = false; car.add(cockpit);
+const cockpitDashMat = new THREE.MeshStandardMaterial({ color: 0x101419, roughness: .82, metalness: .08 });
+const cockpitTrimMat = new THREE.MeshStandardMaterial({ color: 0x343b43, roughness: .56, metalness: .35 });
+const cockpitGlassMat = new THREE.MeshBasicMaterial({ color: 0x9fc4d2, transparent: true, opacity: .10, side: THREE.DoubleSide, depthWrite: false });
+const dashboard = new THREE.Mesh(new THREE.BoxGeometry(2.65, .22, .64), cockpitDashMat); dashboard.position.set(0, .84, .73); cockpit.add(dashboard);
+const dashTop = new THREE.Mesh(new THREE.BoxGeometry(1.22, .06, .12), cockpitTrimMat); dashTop.position.set(0, .985, .48); cockpit.add(dashTop);
+const steeringWheel = new THREE.Mesh(new THREE.TorusGeometry(.235, .045, 8, 18), cockpitTrimMat); steeringWheel.position.set(0, 1.08, .24); cockpit.add(steeringWheel);
+const steeringHub = new THREE.Mesh(new THREE.CylinderGeometry(.055, .055, .07, 8), cockpitTrimMat); steeringHub.rotation.x = Math.PI / 2; steeringHub.position.set(0, 1.08, .24); cockpit.add(steeringHub);
+for (const x of [-1.08, 1.08]) {
+  const pillar = new THREE.Mesh(new THREE.BoxGeometry(.10, 1.04, .12), cockpitTrimMat); pillar.position.set(x, 1.38, .98); pillar.rotation.z = x < 0 ? -.13 : .13; cockpit.add(pillar);
+}
+const windshield = new THREE.Mesh(new THREE.PlaneGeometry(2.08, .72), cockpitGlassMat); windshield.position.set(0, 1.42, 1.02); cockpit.add(windshield);
 const headLampMat = new THREE.MeshBasicMaterial({ color: 0xfff5d0 }); const tailLampMat = new THREE.MeshBasicMaterial({ color: 0xf22a1d });
 for (const x of [-.78, .78]) {
   const head = new THREE.Mesh(new THREE.BoxGeometry(.22, .1, .06), headLampMat); head.position.set(x, .7, 2.08); car.add(head);
@@ -478,6 +491,7 @@ function resetCar(toNearest = false) {
 let engineAudio;
 function startEngineAudio() {
   if (engineAudio) { void engineAudio.ctx.resume(); return; }
+  try {
   const AudioCtor = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtor) return;
   const ctx = new AudioCtor();
@@ -511,6 +525,11 @@ function startEngineAudio() {
   const skidGain = ctx.createGain(); skidGain.gain.value = 0; const skidFilter = ctx.createBiquadFilter(); skidFilter.type = 'bandpass'; skidFilter.frequency.value = 1050; wind.connect(skidFilter).connect(skidGain).connect(windBus);
   const combustionNoiseFilter = ctx.createBiquadFilter(); combustionNoiseFilter.type = 'bandpass'; combustionNoiseFilter.frequency.value = 460; combustionNoiseFilter.Q.value = .55; const combustionNoiseGain = ctx.createGain(); combustionNoiseGain.gain.value = .02; wind.connect(combustionNoiseFilter).connect(combustionNoiseGain).connect(exhaustBus);
   engineAudio = { ctx, master, engineBus, exhaustBus, mechanicalBus, windBus, engineResonance, exhaustFilter, pulse, body, harmonics, intake, exhaust, mechanical, limiter, gearWhine, pulseGain, bodyGain, harmonicGain, intakeGain, exhaustGain, mechanicalGain, limiterGain, gearWhineGain, windGain, skidGain, combustionNoiseGain, lastGear: 'N', lastShiftAt: -99, shiftDirection: 'up' };
+  } catch (error) {
+    // 某些浏览器或隐私模式禁止 Web Audio；不能让音频失败阻断比赛启动。
+    console.warn('[audio] engine audio unavailable; continuing without audio', error);
+    engineAudio = null;
+  }
 }
 function updateEngineAudio() {
   if (!engineAudio) return;
@@ -598,10 +617,14 @@ function updateAutomaticTransmission(dt) {
   }
   if (engineAudio) engineAudio.lastGear = currentGear === 0 ? 'N' : String(currentGear);
 }
+const CAMERA_LABELS = ['远景', '近景', '车内'];
+function updateCameraButton() {
+  const button = $('#view-button'); if (button) button.firstChild.textContent = `${CAMERA_LABELS[cameraMode]} `;
+}
 function beginRace() {
-  // 每场新比赛都从近景第三人称开始；比赛中仍可用 C 切换远景。
+  // 每场新比赛都从近景第三人称开始；比赛中仍可用 C 切换远景或车内视角。
   if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
-  cameraMode = 1; $('#view-button').firstChild.textContent = '近景 ';
+  cameraMode = 1; updateCameraButton();
   started = true; finished = false; paused = false; countdownActive = true; elapsed = 0; lap = 0; speed = 0; resetCar(); startEngineAudio(); if (engineAudio) engineAudio.lastGear = 'N';
   frontEnd.classList.add('hidden'); raceUI.classList.remove('hidden'); pauseOverlay.classList.add('hidden');
   lapEl.textContent = `0 / ${totalLaps}`; bestTimeEl.textContent = bestTimes.has(selectedTrackKey) ? formatTime(bestTimes.get(selectedTrackKey)) : '--:--.---';
@@ -609,8 +632,12 @@ function beginRace() {
   countdownTimer = setInterval(() => { n--; if (n > 0) count.textContent = n; else { countdownActive = false; count.textContent = 'GO'; setTimeout(() => count.classList.remove('show'), 420); clearInterval(countdownTimer); countdownTimer = null; } }, 650);
 }
 function togglePause() { if (!started || finished || countdownActive) return; paused = !paused; pauseOverlay.classList.toggle('hidden', !paused); }
-function quitToMenu() { if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; } countdownActive = false; $('#countdown').classList.remove('show'); started = false; paused = false; pauseOverlay.classList.add('hidden'); raceUI.classList.add('hidden'); frontEnd.classList.remove('hidden'); showScreen('mode'); resetCar(); }
-function cycleCamera() { cameraMode = (cameraMode + 1) % 2; $('#view-button').firstChild.textContent = ['远景 ', '近景 '][cameraMode]; }
+function openFrontEnd(screen = 'mode') {
+  frontEnd.classList.remove('hidden'); raceUI.classList.add('hidden'); pauseOverlay.classList.add('hidden');
+  showScreen(screen);
+}
+function quitToMenu() { if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; } countdownActive = false; $('#countdown').classList.remove('show'); started = false; paused = false; openFrontEnd('mode'); resetCar(); }
+function cycleCamera() { cameraMode = (cameraMode + 1) % CAMERA_LABELS.length; updateCameraButton(); }
 
 function update(dt) {
   if (!started || finished || paused) return;
@@ -690,7 +717,7 @@ function update(dt) {
   if (info.dist > trackWidth * .72) {
     velocity.multiplyScalar(Math.exp(-7.5 * dt)); speed = velocity.dot(forward); statusEl.textContent = '偏离赛道 · 草地抓地力降低';
   } else {
-    car.position.y = THREE.MathUtils.lerp(car.position.y, info.point.y + .14, 1 - Math.pow(.002, dt)); statusEl.textContent = 'W 加速 · S 刹车/倒车 · A/D 转向 · R 回到最近赛道';
+    car.position.y = THREE.MathUtils.lerp(car.position.y, info.point.y + .14, 1 - Math.pow(.002, dt)); statusEl.textContent = 'W 加速 · S 刹车/倒车 · A/D 转向 · R 回到最近赛道 · C 切换视角';
   }
   if (isWrongWay) statusEl.textContent = '方向错误 · 请掉头，或按 R 回到正确方向';
   updateAutomaticTransmission(dt);
@@ -712,7 +739,15 @@ function update(dt) {
 
 function updateCamera(dt) {
   const forward = new THREE.Vector3(Math.sin(heading), 0, Math.cos(heading));
-  // 两个模式都是第三人称：近景仍把车完整留在画面下方，不再贴着车尾或引擎盖。
+  if (playerCarModel) playerCarModel.visible = cameraMode !== 2;
+  cockpit.visible = cameraMode === 2;
+  if (cameraMode === 2) {
+    // 车内驾驶视角：摄像机位于座舱中心略偏驾驶员一侧，仪表台和方向盘提供参照。
+    const interiorPosition = car.position.clone().addScaledVector(forward, .08); interiorPosition.y += 1.19;
+    const interiorLook = car.position.clone().addScaledVector(forward, 22); interiorLook.y += 1.14;
+    camera.position.lerp(interiorPosition, 1 - Math.pow(.00001, dt)); camera.lookAt(interiorLook); return;
+  }
+  // 两个第三人称模式：近景仍把车完整留在画面下方，不再贴着车尾或引擎盖。
   const distance = cameraMode === 0 ? 20.5 : 11.5;
   const height = cameraMode === 0 ? 7.6 : 4.8;
   const desired = car.position.clone().addScaledVector(forward, -distance); desired.y += height;
@@ -720,7 +755,11 @@ function updateCamera(dt) {
   camera.position.lerp(desired, 1 - Math.pow(.001, dt)); camera.lookAt(look);
 }
 const screens = [...document.querySelectorAll('.menu-screen')];
-function showScreen(name) { screens.forEach((screen) => screen.classList.toggle('active', screen.dataset.screen === name)); }
+function showScreen(name) {
+  const target = screens.find((screen) => screen.dataset.screen === name) ? name : 'mode';
+  screens.forEach((screen) => screen.classList.toggle('active', screen.dataset.screen === target));
+  document.querySelectorAll('[data-nav]').forEach((button) => button.classList.toggle('active', button.dataset.nav === target));
+}
 function updateCarMenu() {
   document.querySelectorAll('[data-car]').forEach((card) => card.classList.toggle('selected', card.dataset.car === selectedCarKey));
   document.querySelectorAll('[data-car-preview]').forEach((image) => {
@@ -731,6 +770,7 @@ function updateCarMenu() {
 }
 document.querySelectorAll('[data-next]').forEach((button) => button.addEventListener('click', () => { if (button.dataset.next === 'ready') $('#ready-laps').textContent = `${totalLaps} 圈`; showScreen(button.dataset.next); }));
 document.querySelectorAll('[data-back]').forEach((button) => button.addEventListener('click', () => showScreen(button.dataset.back)));
+document.querySelectorAll('[data-nav]').forEach((button) => button.addEventListener('click', () => showScreen(button.dataset.nav)));
 document.querySelectorAll('[data-track]').forEach((button) => button.addEventListener('click', () => {
   document.querySelectorAll('[data-track]').forEach((card) => card.classList.toggle('selected', card === button)); buildWorld(button.dataset.track);
 }));
@@ -740,7 +780,7 @@ document.querySelectorAll('[data-car]').forEach((button) => button.addEventListe
 $('#laps-option').addEventListener('click', (event) => { if (event.target.tagName === 'I') totalLaps = event.target.textContent === '+' ? (totalLaps === 3 ? 5 : 3) : (totalLaps === 5 ? 3 : 5); $('#laps-value').textContent = `${totalLaps} 圈`; });
 $('#assist-option').addEventListener('click', () => { assistMode = (assistMode + 1) % 3; $('#assist-value').textContent = ['标准', '辅助', '关闭'][assistMode]; });
 $('#start').addEventListener('click', beginRace); $('#pause-button').addEventListener('click', togglePause); $('#resume-button').addEventListener('click', togglePause); $('#view-button').addEventListener('click', cycleCamera); $('#menu-button').addEventListener('click', quitToMenu); $('#quit-button').addEventListener('click', quitToMenu);
-$('#view-button').firstChild.textContent = '近景 ';
+updateCameraButton();
 addEventListener('keydown', (event) => {
   keys.add(event.code); if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.code)) event.preventDefault();
   // 只响应一次物理复位，避免按住 R 时浏览器重复 keydown 把车辆持续锁在原地。
@@ -754,9 +794,10 @@ updateCircuitIcons();
 applyCarSpec(selectedCarKey);
 updateCarMenu();
 loadSelectedCar();
+openFrontEnd('mode');
 window.__THREE_GAME_DIAGNOSTICS__ = () => ({
   renderer: { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, dpr: renderer.getPixelRatio() },
-  state: { started, finished, paused, track: selectedTrackKey, car: selectedCarKey, lap, elapsed: Number(elapsed.toFixed(3)), speed: Number(speed.toFixed(2)), kmh: Math.round(Math.abs(speed) * SPEED_TO_KMH), gear: currentGear === 0 ? 'N' : currentGear, rpm: Math.round(engineRpm), throttle: Number(throttleInput.toFixed(2)), camera: cameraMode === 1 ? 'near' : 'far' },
+  state: { started, finished, paused, track: selectedTrackKey, car: selectedCarKey, lap, elapsed: Number(elapsed.toFixed(3)), speed: Number(speed.toFixed(2)), kmh: Math.round(Math.abs(speed) * SPEED_TO_KMH), gear: currentGear === 0 ? 'N' : currentGear, rpm: Math.round(engineRpm), throttle: Number(throttleInput.toFixed(2)), camera: ['far', 'near', 'cockpit'][cameraMode] },
   track: { width: trackWidth, worldScale, length: Number(trackLength.toFixed(1)), scenery: sceneryClaims.length },
 });
 function animate(now) {

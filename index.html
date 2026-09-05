@@ -12,7 +12,7 @@
       <header class="race-topbar">
         <div class="race-id"><i></i><span>神力科莎</span><small>TIME ATTACK</small></div>
         <div class="top-actions">
-          <button id="view-button" class="icon-button" type="button">视角 <kbd>C</kbd></button>
+          <button id="view-button" class="icon-button" type="button">近景 <kbd>C</kbd></button>
           <button id="pause-button" class="icon-button" type="button">暂停 <kbd>ESC</kbd></button>
           <button id="menu-button" class="icon-button danger" type="button">菜单</button>
         </div>
@@ -53,7 +53,7 @@
         <div id="surface-status">赛道状态 · 干燥</div>
       </div>
 
-      <div id="status">W 加速 · S 刹车/倒车 · A/D 转向 · R 回到最近赛道 · C 切换视角（近景 / 远景）</div>
+      <div id="status">W 加速 · S 刹车/倒车 · A/D 转向 · R 回到最近赛道 · C 切换视角（近景 / 远景 / 车内）</div>
     </div>
 
     <div id="countdown" aria-live="polite"></div>
@@ -66,6 +66,13 @@
         <div><strong>神力科莎</strong><span>LOW POLY RACING</span></div>
         <p>BUILD 0.5 · THREE.JS PROTOTYPE</p>
       </header>
+
+      <nav class="menu-rail" aria-label="主菜单导航">
+        <button class="active" data-nav="mode" type="button"><b>01</b><span>车手</span></button>
+        <button data-nav="circuit" type="button"><b>02</b><span>赛道</span></button>
+        <button data-nav="car" type="button"><b>03</b><span>车库</span></button>
+        <button data-nav="options" type="button"><b>04</b><span>选项</span></button>
+      </nav>
 
       <section class="menu-screen active" data-screen="mode">
         <div class="screen-copy">

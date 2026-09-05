@@ -6,7 +6,7 @@ button { font: inherit; color: inherit; }
 canvas { display: block; }
 .hidden { display: none !important; }
 
-#front-end { position: fixed; inset: 0; z-index: 20; overflow: hidden; background: linear-gradient(105deg, #090b0f 0%, #11151b 58%, #0b0d11 100%); }
+#front-end { position: fixed; inset: 0; z-index: 20; overflow: hidden; pointer-events: auto; background: linear-gradient(105deg, #090b0f 0%, #11151b 58%, #0b0d11 100%); }
 .menu-grid { position: absolute; inset: 0; opacity: .23; background-image: linear-gradient(#fff1 1px, transparent 1px), linear-gradient(90deg, #fff1 1px, transparent 1px); background-size: 62px 62px; transform: perspective(500px) rotateX(56deg) scale(1.5) translateY(20%); mask-image: linear-gradient(to bottom, transparent 4%, #000 50%, transparent 96%); }
 .menu-glow { position: absolute; width: 68vw; height: 68vw; right: -25vw; bottom: -41vw; border-radius: 50%; background: radial-gradient(circle, #ff451f66, #ff451f0a 42%, transparent 68%); }
 .menu-brand { position: absolute; z-index: 3; left: clamp(22px, 4vw, 70px); right: clamp(22px, 4vw, 70px); top: 30px; height: 58px; display: flex; align-items: center; gap: 13px; border-bottom: 1px solid #fff2; }
@@ -15,6 +15,11 @@ canvas { display: block; }
 .menu-brand strong { font: 800 20px/1 "Barlow Condensed", sans-serif; letter-spacing: .09em; }
 .menu-brand span, .menu-brand p { font: 600 9px/1.5 "Barlow Condensed"; letter-spacing: .18em; color: #a9adb4; }
 .menu-brand p { margin-left: auto; }
+.menu-rail { position: absolute; z-index: 4; left: clamp(18px, 2.6vw, 38px); top: 112px; bottom: 58px; width: 48px; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 4px; border-right: 1px solid #fff2; }
+.menu-rail button { position: relative; width: 42px; min-height: 54px; padding: 8px 2px; display: grid; place-items: center; gap: 2px; border: 0; border-left: 2px solid transparent; background: transparent; color: #727982; cursor: pointer; transition: .18s; }
+.menu-rail button:hover, .menu-rail button.active { color: #f7f4ef; border-left-color: var(--orange); background: #ff4d1917; }
+.menu-rail b { color: var(--orange); font: 900 14px/1 "Barlow Condensed"; }
+.menu-rail span { font-size: 9px; writing-mode: vertical-rl; letter-spacing: .12em; }
 .menu-screen { position: absolute; inset: 105px clamp(22px, 6vw, 100px) 58px; z-index: 2; display: none; align-items: center; gap: 7vw; opacity: 0; transform: translateX(25px); }
 .menu-screen.active { display: flex; animation: screen-in .28s ease-out forwards; }
 @keyframes screen-in { to { opacity: 1; transform: translateX(0); } }
@@ -152,7 +157,7 @@ kbd { margin-left: 5px; color: #ffffff88; font-size: 8px; }
 .pause-card button { width: 100%; margin: 5px 0; }
 
 @media (max-width: 760px) {
-  .menu-brand p, .screen-copy, .menu-footer { display: none; }
+  .menu-brand p, .screen-copy, .menu-footer, .menu-rail { display: none; }
   .menu-screen { inset: 96px 18px 24px; }
   .menu-content, .menu-content.wide { width: 100%; }
   .circuit-grid { grid-template-columns: 1fr; }
