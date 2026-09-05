@@ -16,10 +16,6 @@ const rpmFill = $('#rpm-fill');
 const rpmValueEl = $('#rpm-value');
 const mapDot = $('#map-dot');
 const statusEl = $('#status');
-const routeGuideEl = $('#route-guide');
-const routeArrowEl = $('#route-arrow');
-const routeCallEl = $('#route-call');
-const routeDistanceEl = $('#route-distance');
 const wrongWayEl = $('#wrong-way');
 const frontEnd = $('#front-end');
 const raceUI = $('#race-ui');
@@ -71,10 +67,13 @@ let minimapProject = () => ({ x: 0, y: 0 });
 // 采样密度和路宽按 GP 赛道标准提高，避免长直道和高速弯出现折线。
 const sampleCount = 1040;
 const trackWidth = 16.2;
-const WORLD_SCALE = 2.075; // 本轮按用户要求将整条赛道缩小到上一版的 1/2
+// 源数据是归一化的真实中心线坐标；按每条赛道官方圈长反推米制比例，
+// 让车长 4.35 m、赛道圈长和场景间距都与真实比例一致。
+const TRACK_WORLD_SCALES = { monza: 5.0585, spa: 4.8424, silverstone: 4.0035, nurburgring: 3.5790 };
+let worldScale = TRACK_WORLD_SCALES.monza;
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 1600);
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 4000);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 // 2x DPR + 2048 阴影在集成显卡上会明显拖慢帧率；1.5x 仍保持清晰，同时给车辆和场景留出 GPU 余量。
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
@@ -89,7 +88,7 @@ root.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xe8f7ff, 0x40564a, 2.2));
 const sun = new THREE.DirectionalLight(0xfff1cf, 3.5);
 sun.position.set(-60, 90, 30); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
-sun.shadow.camera.left = -420; sun.shadow.camera.right = 420; sun.shadow.camera.top = 420; sun.shadow.camera.bottom = -420;
+sun.shadow.camera.left = -1100; sun.shadow.camera.right = 1100; sun.shadow.camera.top = 1100; sun.shadow.camera.bottom = -1100;
 scene.add(sun);
 function makeSurfaceTexture(baseHex, accentHex, size = 256, cell = 2) {
   const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size; const ctx = canvas.getContext('2d');
@@ -105,7 +104,8 @@ function makeSurfaceTexture(baseHex, accentHex, size = 256, cell = 2) {
 const grassTexture = makeSurfaceTexture(0x4d6a43, 0x78915e, 512, 3); grassTexture.repeat.set(18, 18);
 const asphaltTexture = makeSurfaceTexture(0x343a3c, 0x596062, 256, 2);
 const groundMaterial = new THREE.MeshStandardMaterial({ color: selectedTrack.ground, map: grassTexture, roughness: 1 });
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), groundMaterial);
+// 四条赛道按真实圈长重建后，蒙扎纵向范围超过 2 km；地面必须留出完整缓冲，避免边缘露底。
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(3600, 3600), groundMaterial);
 ground.rotation.x = -Math.PI / 2; ground.position.y = -0.08; ground.receiveShadow = true; scene.add(ground);
 let world = new THREE.Group(); world.matrixAutoUpdate = false; world.updateMatrix(); scene.add(world);
 let worldGeneration = 0;
@@ -238,34 +238,35 @@ function buildMinimap() {
 }
 
 function addRouteGuides() {
-  // 用少量 InstancedMesh 箭头明确赛道行驶方向；放在中心线右侧，避免遮住白色虚线。
+  // 用少量 InstancedMesh 箭头明确赛道行驶方向；箭头贴在柏油表面并放在车道一侧，避免遮住车辆。
   const shape = new THREE.Shape();
   shape.moveTo(0, 2.4); shape.lineTo(1.55, .55); shape.lineTo(.68, .55); shape.lineTo(.68, -1.35);
   shape.lineTo(-.68, -1.35); shape.lineTo(-.68, .55); shape.lineTo(-1.55, .55); shape.closePath();
   const geometry = new THREE.ShapeGeometry(shape); geometry.rotateX(Math.PI / 2);
   // ShapeGeometry 的法线在铺到地面后朝下；双面材质确保从驾驶视角能看到方向箭头。
-  const material = new THREE.MeshBasicMaterial({ color: 0x46ddff, transparent: true, opacity: .96, depthTest: false, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
+  const material = new THREE.MeshBasicMaterial({ color: 0x46ddff, transparent: true, opacity: .82, depthTest: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
   const samples = [];
-  // 从起步线前方留出一点视距，箭头铺在车道一侧，避免压住起步线和底部 HUD。
-  for (let i = 26; i < sampleCount; i += 38) samples.push(i);
+  // 从起步线前方留出约 80 m 视距，箭头间距约 130 m（按真实圈长），车身附近保持干净。
+  for (let i = 14; i < sampleCount; i += 24) samples.push(i);
   const arrows = new THREE.InstancedMesh(geometry, material, samples.length);
   arrows.instanceMatrix.setUsage(THREE.StaticDrawUsage); arrows.matrixAutoUpdate = false; arrows.updateMatrix(); arrows.frustumCulled = false;
   const dummy = new THREE.Object3D();
   samples.forEach((sampleIndex, instanceIndex) => {
     const p = trackSamples[sampleIndex]; const tangent = trackTangents[sampleIndex]; const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
-    dummy.position.copy(p).addScaledVector(side, -3.4); dummy.position.y += .18; dummy.scale.setScalar(1.2);
+    dummy.position.copy(p).addScaledVector(side, -3.8); dummy.position.y += .055; dummy.scale.setScalar(.96);
     dummy.rotation.set(0, Math.atan2(tangent.x, tangent.z), 0); dummy.updateMatrix(); arrows.setMatrixAt(instanceIndex, dummy.matrix);
   });
-  arrows.instanceMatrix.needsUpdate = true; arrows.renderOrder = 4; world.add(arrows);
+  arrows.instanceMatrix.needsUpdate = true; arrows.renderOrder = 1; world.add(arrows);
 }
 
 function buildWorld(key) {
   selectedTrackKey = key; selectedTrack = TRACKS[key]; worldGeneration++;
   scene.remove(world); world = new THREE.Group(); world.matrixAutoUpdate = false; world.updateMatrix(); scene.add(world); sceneryClaims = [];
-  scene.background = new THREE.Color(selectedTrack.sky); scene.fog = new THREE.Fog(selectedTrack.fog, 180, 1100); groundMaterial.color.setHex(selectedTrack.ground);
+  worldScale = TRACK_WORLD_SCALES[key] || TRACK_WORLD_SCALES.monza;
+  scene.background = new THREE.Color(selectedTrack.sky); scene.fog = new THREE.Fog(selectedTrack.fog, 320, 3000); groundMaterial.color.setHex(selectedTrack.ground);
   const minElevation = Math.min(...selectedTrack.points.map((point) => point[2]));
   // 生成数据已按弧长均匀采样并通过离线净距检查，不再使用旧的控制点排斥算法扭曲真实轮廓。
-  const vectors = selectedTrack.points.map(([x, z, y]) => new THREE.Vector3(x * WORLD_SCALE, (y - minElevation) * .52, z * WORLD_SCALE));
+  const vectors = selectedTrack.points.map(([x, z, y]) => new THREE.Vector3(x * worldScale, (y - minElevation) * .52, z * worldScale));
   trackCurve = new THREE.CatmullRomCurve3(vectors, true, 'centripetal'); trackCurve.arcLengthDivisions = 2600; trackLength = trackCurve.getLength();
   // 建图时一次性缓存中心线和切线。运行时最近点查询与道路网格都复用它们。
   trackSamples = Array.from({ length: sampleCount + 1 }, (_, i) => trackCurve.getPointAt(i / sampleCount));
@@ -348,10 +349,12 @@ function buildWorld(key) {
     loadKitOnTrack(natureBase, natureStems[i % natureStems.length], 8 + (i % 3), t, sign, offset, i * .47, (i % 3) * 3, generation);
   }
   const mountainColors = key === 'silverstone' ? [0x75847f,0x687873] : [0x557276,0x3f5c60,0x31484d];
-  // 赛道范围约 ±450u；山体环放到 760u 外，避免近处山锥切进道路视线形成“巨型岔路/挡板”。
+  const mapRadius = Math.max(...trackSamples.map((point) => Math.hypot(point.x, point.z)));
+  // 山体跟随真实地图外扩，避免放大赛道后山锥切进道路视线形成“巨型岔路/挡板”。
+  const mountainRadius = mapRadius + 430;
   for (let i = 0; i < (key === 'silverstone' ? 8 : 20); i++) {
     const mountain = new THREE.Mesh(new THREE.ConeGeometry(28 + (i % 3) * 12, 34 + (i % 4) * 10, 5), new THREE.MeshBasicMaterial({ color: mountainColors[i % mountainColors.length] }));
-    const angle = (i / 20) * Math.PI * 2; const radius = 760 + (i % 2) * 55; mountain.position.set(Math.cos(angle) * radius, 12, Math.sin(angle) * radius); mountain.rotation.y = i * .73; world.add(mountain);
+    const angle = (i / 20) * Math.PI * 2; const radius = mountainRadius + (i % 2) * 55; mountain.position.set(Math.cos(angle) * radius, 12, Math.sin(angle) * radius); mountain.rotation.y = i * .73; world.add(mountain);
   }
   buildMinimap(); if (car) resetCar();
   console.info(`[track] ${selectedTrack.name}`, { length: trackLength.toFixed(1), clearance: 'asphalt clear' });
@@ -386,8 +389,8 @@ carLoader.load(
 let started = false; let finished = false; let countdownActive = false; let countdownTimer = null; let elapsed = 0; let lap = 0; let speed = 0; let heading = 0; let lastProgress = 0; let lastTime = performance.now(); let hudAccumulator = 0; let wrongWayTime = 0;
 let velocity = new THREE.Vector3(); let yawRate = 0;
 const bestTimes = new Map();
-// 速度单位标定：赛道 WORLD_SCALE 已从 4.15 缩到 2.075；当前 3.2 km/h·unit⁻¹
-// 让 200 km/h 对应约 62.5 world units/s 的实际位移，最高速约 302 km/h。
+// 速度单位标定：1 world unit 对应 1 m；当前 3.2 km/h·unit⁻¹，
+// 让 200 km/h 对应约 62.5 m/s 的实际位移，最高速约 302 km/h。
 const TOP_SPEED_KMH = 302;
 const SPEED_TO_KMH = 3.2;
 const maxSpeed = TOP_SPEED_KMH / SPEED_TO_KMH;
@@ -418,25 +421,6 @@ function nearestTrackInfo(pos) {
   let best = { dist: Infinity, t: 0, point: startP, tangent: startT, index: 0 };
   for (let i = 0; i < sampleCount; i += 2) { const t = i / sampleCount; const p = trackSamples[i]; const d = Math.hypot(p.x - pos.x, p.z - pos.z); if (d < best.dist) best = { dist: d, t, point: p, tangent: trackTangents[i], index: i }; }
   return best;
-}
-function updateRouteGuide(info) {
-  const current = info.tangent; let direction = 'straight'; let distanceMeters = 0;
-  // 比较每个短窗口的局部切线，而不是把整段 S 弯首尾相减，避免后一个弯反转导航方向。
-  for (let step = 12; step <= 132; step += 8) {
-    const before = trackTangents[(info.index + step - 6 + sampleCount) % sampleCount];
-    const ahead = trackTangents[(info.index + step + 6) % sampleCount];
-    const angle = Math.acos(THREE.MathUtils.clamp(before.dot(ahead), -1, 1));
-    if (angle < .1) continue;
-    // 在 Three.js 的 XZ 平面中，正的二维叉积代表车头向右偏转。
-    const turnSign = before.z * ahead.x - before.x * ahead.z;
-    direction = turnSign > 0 ? 'right' : 'left';
-    distanceMeters = Math.max(20, Math.round(parseFloat(selectedTrack.distance) * 1000 * Math.max(0, step - 6) / sampleCount / 10) * 10);
-    break;
-  }
-  routeGuideEl.dataset.turn = direction;
-  routeArrowEl.textContent = direction === 'left' ? '↖' : direction === 'right' ? '↗' : '↑';
-  routeCallEl.textContent = direction === 'left' ? '前方左弯' : direction === 'right' ? '前方右弯' : '保持直行';
-  routeDistanceEl.textContent = direction === 'straight' ? '跟随蓝色路面箭头' : `约 ${distanceMeters} 米 · 跟随蓝色箭头`;
 }
 function formatTime(v) { const m = Math.floor(v / 60); const s = (v % 60).toFixed(3).padStart(6, '0'); return `${String(m).padStart(2, '0')}:${s}`; }
 function resetCar(toNearest = false) {
@@ -581,7 +565,6 @@ function beginRace() {
   started = true; finished = false; paused = false; countdownActive = true; elapsed = 0; lap = 0; speed = 0; resetCar(); startEngineAudio(); if (engineAudio) engineAudio.lastGear = 'N';
   frontEnd.classList.add('hidden'); raceUI.classList.remove('hidden'); pauseOverlay.classList.add('hidden');
   lapEl.textContent = `0 / ${totalLaps}`; bestTimeEl.textContent = bestTimes.has(selectedTrackKey) ? formatTime(bestTimes.get(selectedTrackKey)) : '--:--.---';
-  updateRouteGuide(nearestTrackInfo(car.position));
   const count = $('#countdown'); let n = 3; count.textContent = n; count.classList.add('show');
   countdownTimer = setInterval(() => { n--; if (n > 0) count.textContent = n; else { countdownActive = false; count.textContent = 'GO'; setTimeout(() => count.classList.remove('show'), 420); clearInterval(countdownTimer); countdownTimer = null; } }, 650);
 }
@@ -684,7 +667,6 @@ function update(dt) {
     const kmh = Math.round(Math.abs(speed) * SPEED_TO_KMH); const gear = currentGear === 0 ? 'N' : String(currentGear);
     speedEl.textContent = kmh; lapEl.textContent = Math.min(lap, totalLaps) + ' / ' + totalLaps; timeEl.textContent = formatTime(elapsed); gearEl.textContent = gear; rpmFill.style.width = Math.max(3, Math.min(100, (engineRpm - 800) / 74)) + '%'; rpmValueEl.textContent = Math.round(engineRpm).toLocaleString('en-US') + ' RPM';
     const q = minimapProject(sampleTrackPoint(progress)); mapDot.setAttribute('cx', q.x); mapDot.setAttribute('cy', q.y);
-    updateRouteGuide(info);
   }
 }
 
@@ -720,7 +702,7 @@ buildWorld(selectedTrackKey);
 window.__THREE_GAME_DIAGNOSTICS__ = () => ({
   renderer: { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, dpr: renderer.getPixelRatio() },
   state: { started, finished, paused, track: selectedTrackKey, lap, elapsed: Number(elapsed.toFixed(3)), speed: Number(speed.toFixed(2)), kmh: Math.round(Math.abs(speed) * SPEED_TO_KMH), gear: currentGear === 0 ? 'N' : currentGear, rpm: Math.round(engineRpm), throttle: Number(throttleInput.toFixed(2)), camera: cameraMode === 1 ? 'near' : 'far' },
-  track: { width: trackWidth, worldScale: WORLD_SCALE, length: Number(trackLength.toFixed(1)), scenery: sceneryClaims.length },
+  track: { width: trackWidth, worldScale, length: Number(trackLength.toFixed(1)), scenery: sceneryClaims.length },
 });
 function animate(now) {
   const frameDt = Math.min(FIXED_DT * MAX_PHYSICS_STEPS, (now - lastTime) / 1000); lastTime = now; physicsAccumulator += frameDt;
