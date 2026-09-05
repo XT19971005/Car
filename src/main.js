@@ -1421,7 +1421,11 @@ function updateCamera(dt) {
   desired.y += height + Math.sin(cameraOrbitPitch) * distance;
   const look = car.position.clone().addScaledVector(forward, cameraMode === 0 ? 4.15 : 6.5);
   look.y += (cameraMode === 0 ? .74 : 1.1) + Math.sin(cameraOrbitPitch) * 1.35;
-  camera.position.lerp(desired, 1 - Math.pow(.001, dt)); camera.lookAt(look);
+  // 近景必须锁定在车尾目标点；平滑追赶会在加速时产生明显滞后，
+  // 让车辆看起来像把镜头越甩越远。远景保留缓动，鼠标环绕仍然自然。
+  if (cameraMode === 0) camera.position.copy(desired);
+  else camera.position.lerp(desired, 1 - Math.pow(.001, dt));
+  camera.lookAt(look);
 }
 const screens = [...document.querySelectorAll('.menu-screen')];
 function showScreen(name) {
