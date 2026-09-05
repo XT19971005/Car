@@ -10,6 +10,9 @@ const TRACK_IDS = {
   spa: 'be-1925',
   silverstone: 'gb-1948',
   nurburgring: 'de-1927',
+  suzuka: 'jp-1962',
+  imola: 'it-1953',
+  redbull: 'at-1969',
 };
 
 function closedPolylineSample(points, count) {
@@ -38,6 +41,9 @@ function elevationFor(key, t) {
   if (key === 'spa') return 19 + Math.sin(t * Math.PI * 2 - .8) * 15 + Math.sin(t * Math.PI * 4 + .6) * 5;
   if (key === 'nurburgring') return 11 + Math.sin(t * Math.PI * 2 + .5) * 8 + Math.sin(t * Math.PI * 6) * 2.5;
   if (key === 'silverstone') return 2 + Math.sin(t * Math.PI * 2) * 1.5;
+  if (key === 'suzuka') return 8 + Math.sin(t * Math.PI * 2 - .4) * 5 + Math.sin(t * Math.PI * 6 + .7) * 2;
+  if (key === 'imola') return 12 + Math.sin(t * Math.PI * 2 + .9) * 9 + Math.sin(t * Math.PI * 8) * 2;
+  if (key === 'redbull') return 24 + Math.sin(t * Math.PI * 2 - .5) * 12 + Math.sin(t * Math.PI * 4) * 3;
   return 1.5 + Math.sin(t * Math.PI * 2 + .3) * 1.2;
 }
 

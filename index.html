@@ -53,7 +53,7 @@
         <div id="surface-status">赛道状态 · 干燥</div>
       </div>
 
-      <div id="status">W 加速 · S 刹车/倒车 · A/D 转向 · R 回到最近赛道 · C 切换视角（近景 / 远景 / 车内）</div>
+      <div id="status">W 加速 · S 刹车/倒车 · A/D 转向 · 按住左键环视 · R 回赛道 · C 切换视角</div>
     </div>
 
     <div id="countdown" aria-live="polite"></div>
@@ -78,7 +78,7 @@
         <div class="screen-copy">
           <p class="eyebrow">WELCOME, DRIVER</p>
           <h1>神力科莎<br><em>赛道体验</em></h1>
-          <p class="lead">四条传奇欧洲赛道，四台可选赛车，一场干净利落的单人计时赛。</p>
+          <p class="lead">九条传奇赛道，九台可选赛车，一场干净利落的单人计时赛。</p>
         </div>
         <div class="menu-content">
           <div class="section-heading"><span>01</span><h2>选择比赛模式</h2><small>SELECT MODE</small></div>
@@ -110,6 +110,26 @@
               <div class="circuit-art nurburgring"><span>可比赛</span><svg viewBox="0 0 180 100"><path d=""/></svg></div>
               <div><small>德国 · 艾费尔</small><strong>纽博格林 GP</strong><p>5.148 KM · 15 弯 · 高低落差</p></div>
             </button>
+            <button class="circuit-card" data-track="suzuka" data-next="car" type="button">
+              <div class="circuit-art suzuka"><span>可比赛</span><svg viewBox="0 0 180 100"><path d=""/></svg></div>
+              <div><small>日本 · 三重</small><strong>铃鹿</strong><p>5.807 KM · 18 弯 · S 弯与 130R</p></div>
+            </button>
+            <button class="circuit-card" data-track="imola" data-next="car" type="button">
+              <div class="circuit-art imola"><span>可比赛</span><svg viewBox="0 0 180 100"><path d=""/></svg></div>
+              <div><small>意大利 · 艾米利亚</small><strong>伊莫拉</strong><p>4.909 KM · 19 弯 · 路肩与高低差</p></div>
+            </button>
+            <button class="circuit-card" data-track="bathurst" data-next="car" type="button">
+              <div class="circuit-art bathurst"><span>可比赛</span><svg viewBox="0 0 180 100"><path d=""/></svg></div>
+              <div><small>澳大利亚 · 新南威尔士</small><strong>巴瑟斯特</strong><p>6.213 KM · 23 弯 · 山地与城市直道</p></div>
+            </button>
+            <button class="circuit-card" data-track="laguna" data-next="car" type="button">
+              <div class="circuit-art laguna"><span>可比赛</span><svg viewBox="0 0 180 100"><path d=""/></svg></div>
+              <div><small>美国 · 加利福尼亚</small><strong>拉古纳·塞卡</strong><p>3.602 KM · 11 弯 · Corkscrew</p></div>
+            </button>
+            <button class="circuit-card" data-track="redbull" data-next="car" type="button">
+              <div class="circuit-art redbull"><span>可比赛</span><svg viewBox="0 0 180 100"><path d=""/></svg></div>
+              <div><small>奥地利 · 施皮尔伯格</small><strong>红牛环</strong><p>4.318 KM · 10 弯 · 长直道与重刹</p></div>
+            </button>
           </div>
           <button class="back-button" data-back="mode" type="button">← 返回模式</button>
         </div>
@@ -131,9 +151,29 @@
               <div class="car-card-art future"><span>可用</span><img data-car-preview="race-future" alt="KR-03 Future GT" /><em>HYPER · AWD</em></div>
               <div><small>KR-03 / FUTURE GT</small><strong>KR-03 FUTURE GT</strong><p>430 HP · 332 KM/H · 2.7 S</p></div>
             </button>
-            <button class="car-card" data-car="touring" data-next="options" type="button">
-              <div class="car-card-art touring"><span>可用</span><img data-car-preview="hatchback-sports" alt="KR-04 Touring" /><em>TOURING · FWD</em></div>
-              <div><small>KR-04 / TOURING</small><strong>KR-04 TOURING</strong><p>280 HP · 278 KM/H · 4.1 S</p></div>
+            <button class="car-card" data-car="bigfoot" data-next="options" type="button">
+              <div class="car-card-art bigfoot"><span>新增</span><img data-car-preview="bigfoot" alt="KR-04 Bigfoot Truck" /><em>TRUCK · 4WD</em></div>
+              <div><small>KR-04 / BIGFOOT</small><strong>KR-04 BIGFOOT</strong><p>420 HP · 238 KM/H · 4.8 S</p></div>
+            </button>
+            <button class="car-card" data-car="zhizun" data-next="options" type="button">
+              <div class="car-card-art zhizun"><span>新增</span><img data-car-preview="zhizun" alt="KR-05 ZhiZun Monster Truck" /><em>MONSTER · 4WD</em></div>
+              <div><small>KR-05 / ZHIZUN</small><strong>KR-05 ZHIZUN</strong><p>460 HP · 226 KM/H · 5.1 S</p></div>
+            </button>
+            <button class="car-card" data-car="car011" data-next="options" type="button">
+              <div class="car-card-art car011"><span>新增</span><img data-car-preview="car011" alt="KR-06 Car 011" /><em>SPORT · RWD</em></div>
+              <div><small>KR-06 / CAR 011</small><strong>KR-06 CAR 011</strong><p>350 HP · 290 KM/H · 3.8 S</p></div>
+            </button>
+            <button class="car-card" data-car="porsche" data-next="options" type="button">
+              <div class="car-card-art porsche"><span>新增</span><img data-car-preview="porsche" alt="KR-07 Porsche 992 GT3 R" /><em>GT3 · RWD</em></div>
+              <div><small>KR-07 / PORSCHE</small><strong>KR-07 992 GT3 R</strong><p>550 HP · 310 KM/H · 3.2 S</p></div>
+            </button>
+            <button class="car-card" data-car="mclaren" data-next="options" type="button">
+              <div class="car-card-art mclaren"><span>新增</span><img data-car-preview="mclaren" alt="KR-08 McLaren MP4-17" /><em>F1 · RWD</em></div>
+              <div><small>KR-08 / MCLAREN</small><strong>KR-08 MP4-17</strong><p>900 HP · 326 KM/H · 2.9 S</p></div>
+            </button>
+            <button class="car-card" data-car="cicada" data-next="options" type="button">
+              <div class="car-card-art cicada"><span>新增</span><img data-car-preview="cicada" alt="KR-09 Cicada Retro Cartoon" /><em>RETRO · RWD</em></div>
+              <div><small>KR-09 / CICADA</small><strong>KR-09 CICADA</strong><p>300 HP · 248 KM/H · 4.6 S</p></div>
             </button>
           </div>
           <button class="back-button" data-back="circuit" type="button">← 返回赛道</button>
