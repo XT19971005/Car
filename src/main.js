@@ -17,6 +17,7 @@ const rpmValueEl = $('#rpm-value');
 const mapDot = $('#map-dot');
 const statusEl = $('#status');
 const routeGuideEl = $('#route-guide');
+const routeArrowEl = $('#route-arrow');
 const routeCallEl = $('#route-call');
 const routeDistanceEl = $('#route-distance');
 const wrongWayEl = $('#wrong-way');
@@ -382,7 +383,7 @@ carLoader.load(
   () => fallbackCarLoader.load('sedan-sports.glb', (gltf) => fitPlayerCar(gltf.scene), undefined, addFallbackRacingCar),
 );
 
-let started = false; let finished = false; let elapsed = 0; let lap = 0; let speed = 0; let heading = 0; let lastProgress = 0; let lastTime = performance.now(); let hudAccumulator = 0; let wrongWayTime = 0;
+let started = false; let finished = false; let countdownActive = false; let countdownTimer = null; let elapsed = 0; let lap = 0; let speed = 0; let heading = 0; let lastProgress = 0; let lastTime = performance.now(); let hudAccumulator = 0; let wrongWayTime = 0;
 let velocity = new THREE.Vector3(); let yawRate = 0;
 const bestTimes = new Map();
 // 速度单位标定：赛道 WORLD_SCALE 已从 4.15 缩到 2.075；当前 3.2 km/h·unit⁻¹
@@ -391,7 +392,8 @@ const TOP_SPEED_KMH = 302;
 const SPEED_TO_KMH = 3.2;
 const maxSpeed = TOP_SPEED_KMH / SPEED_TO_KMH;
 const reverseMaxSpeed = 6.0;
-const launchAcceleration = 4.8;
+// 起步加速度按俱乐部赛车标定：输入响应更快，0–100 km/h 约 4.5 秒，不再有“牛车”拖沓感。
+const launchAcceleration = 8.6;
 const reverseAcceleration = 3.8;
 const brakeDeceleration = 17.5;
 const keys = new Set();
@@ -417,16 +419,20 @@ function nearestTrackInfo(pos) {
 }
 function updateRouteGuide(info) {
   const current = info.tangent; let direction = 'straight'; let distanceMeters = 0;
+  // 比较每个短窗口的局部切线，而不是把整段 S 弯首尾相减，避免后一个弯反转导航方向。
   for (let step = 12; step <= 132; step += 8) {
-    const ahead = trackTangents[(info.index + step) % sampleCount];
-    const angle = Math.acos(THREE.MathUtils.clamp(current.dot(ahead), -1, 1));
-    if (angle < .2) continue;
-    const cross = current.x * ahead.z - current.z * ahead.x;
-    direction = cross > 0 ? 'left' : 'right';
-    distanceMeters = Math.max(20, Math.round(parseFloat(selectedTrack.distance) * 1000 * step / sampleCount / 10) * 10);
+    const before = trackTangents[(info.index + step - 6 + sampleCount) % sampleCount];
+    const ahead = trackTangents[(info.index + step + 6) % sampleCount];
+    const angle = Math.acos(THREE.MathUtils.clamp(before.dot(ahead), -1, 1));
+    if (angle < .1) continue;
+    // 在 Three.js 的 XZ 平面中，正的二维叉积代表车头向右偏转。
+    const turnSign = before.z * ahead.x - before.x * ahead.z;
+    direction = turnSign > 0 ? 'right' : 'left';
+    distanceMeters = Math.max(20, Math.round(parseFloat(selectedTrack.distance) * 1000 * Math.max(0, step - 6) / sampleCount / 10) * 10);
     break;
   }
   routeGuideEl.dataset.turn = direction;
+  routeArrowEl.textContent = direction === 'left' ? '↖' : direction === 'right' ? '↗' : '↑';
   routeCallEl.textContent = direction === 'left' ? '前方左弯' : direction === 'right' ? '前方右弯' : '保持直行';
   routeDistanceEl.textContent = direction === 'straight' ? '跟随蓝色路面箭头' : `约 ${distanceMeters} 米 · 跟随蓝色箭头`;
 }
@@ -568,21 +574,30 @@ function updateAutomaticTransmission(dt) {
 }
 function beginRace() {
   // 每场新比赛都从近景第三人称开始；比赛中仍可用 C 切换远景。
+  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
   cameraMode = 1; $('#view-button').firstChild.textContent = '近景 ';
-  started = true; finished = false; paused = false; elapsed = 0; lap = 0; speed = 0; resetCar(); startEngineAudio(); if (engineAudio) engineAudio.lastGear = 'N';
+  started = true; finished = false; paused = false; countdownActive = true; elapsed = 0; lap = 0; speed = 0; resetCar(); startEngineAudio(); if (engineAudio) engineAudio.lastGear = 'N';
   frontEnd.classList.add('hidden'); raceUI.classList.remove('hidden'); pauseOverlay.classList.add('hidden');
   lapEl.textContent = `0 / ${totalLaps}`; bestTimeEl.textContent = bestTimes.has(selectedTrackKey) ? formatTime(bestTimes.get(selectedTrackKey)) : '--:--.---';
+  updateRouteGuide(nearestTrackInfo(car.position));
   const count = $('#countdown'); let n = 3; count.textContent = n; count.classList.add('show');
-  const timer = setInterval(() => { n--; if (n > 0) count.textContent = n; else { count.textContent = 'GO'; setTimeout(() => count.classList.remove('show'), 420); clearInterval(timer); } }, 650);
+  countdownTimer = setInterval(() => { n--; if (n > 0) count.textContent = n; else { countdownActive = false; count.textContent = 'GO'; setTimeout(() => count.classList.remove('show'), 420); clearInterval(countdownTimer); countdownTimer = null; } }, 650);
 }
-function togglePause() { if (!started || finished) return; paused = !paused; pauseOverlay.classList.toggle('hidden', !paused); }
-function quitToMenu() { started = false; paused = false; pauseOverlay.classList.add('hidden'); raceUI.classList.add('hidden'); frontEnd.classList.remove('hidden'); showScreen('mode'); resetCar(); }
+function togglePause() { if (!started || finished || countdownActive) return; paused = !paused; pauseOverlay.classList.toggle('hidden', !paused); }
+function quitToMenu() { if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; } countdownActive = false; $('#countdown').classList.remove('show'); started = false; paused = false; pauseOverlay.classList.add('hidden'); raceUI.classList.add('hidden'); frontEnd.classList.remove('hidden'); showScreen('mode'); resetCar(); }
 function cycleCamera() { cameraMode = (cameraMode + 1) % 2; $('#view-button').firstChild.textContent = ['远景 ', '近景 '][cameraMode]; }
 
 function update(dt) {
   if (!started || finished || paused) return;
+  if (countdownActive) {
+    // 倒计时只允许怠速，油门/刹车输入不会进入物理更新，GO 后下一帧才解锁。
+    throttleInput = THREE.MathUtils.damp(throttleInput, 0, 18, dt);
+    brakeInput = THREE.MathUtils.damp(brakeInput, 0, 18, dt);
+    velocity.set(0, 0, 0); speed = 0; currentGear = 0; engineRpm = THREE.MathUtils.damp(engineRpm, 1050, 12, dt);
+    return;
+  }
   elapsed += dt; const throttle = actionHeld('throttle'); const reverse = actionHeld('brake');
-  throttleInput = THREE.MathUtils.damp(throttleInput, throttle ? 1 : 0, throttle ? 3.4 : 9.5, dt);
+  throttleInput = THREE.MathUtils.damp(throttleInput, throttle ? 1 : 0, throttle ? 6.0 : 9.5, dt);
   brakeInput = THREE.MathUtils.damp(brakeInput, reverse ? 1 : 0, reverse ? 12 : 9, dt);
 
   // 轻量级车辆动力学：纵向驱动 + 侧向抓地 + 有惯性的转向。

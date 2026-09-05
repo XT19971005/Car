@@ -108,9 +108,7 @@ kbd { margin-left: 5px; color: #ffffff88; font-size: 8px; }
 .track-name strong { font-size: 12px; }
 .track-name small { color: #999fa7; font-size: 8px; }
 .route-guide { position: absolute; top: 86px; left: 50%; min-width: 190px; padding: 9px 18px 10px; transform: translateX(-50%); border-top: 2px solid #49dcff; background: linear-gradient(110deg, #07151dcc, #112731b8); text-align: center; backdrop-filter: blur(8px); }
-.route-guide::before { content: "↑"; display: inline-block; margin-right: 8px; color: #49dcff; font: 900 22px/1 "Barlow Condensed"; transition: transform .18s ease; }
-.route-guide[data-turn="left"]::before { transform: rotate(-45deg); }
-.route-guide[data-turn="right"]::before { transform: rotate(45deg); }
+.route-arrow { display: block; height: 24px; color: #49dcff; font: 900 25px/24px "Barlow Condensed"; text-shadow: 0 0 12px #49dcffaa; }
 .route-guide span { display: block; color: #78e7ff; font: 800 8px "Barlow Condensed"; letter-spacing: .2em; }
 .route-guide strong { display: inline-block; font: 900 19px/1.15 "Barlow Condensed"; letter-spacing: .05em; }
 .route-guide small { display: block; margin-top: 2px; color: #b6c6cd; font-size: 8px; letter-spacing: .08em; }
