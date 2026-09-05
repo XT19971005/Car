@@ -237,6 +237,25 @@ function buildMinimap() {
   $('#hud-track-number').textContent = selectedTrack.number; $('#hud-track-name').textContent = selectedTrack.name; $('#hud-track-distance').textContent = selectedTrack.distance; $('#ready-track').textContent = selectedTrack.name;
 }
 
+// 开始界面与比赛 HUD 共用同一套中心线数据，避免手工 SVG 轮廓与实际路线不一致。
+function updateCircuitIcons() {
+  document.querySelectorAll('.circuit-card[data-track]').forEach((card) => {
+    const path = card.querySelector('.circuit-art svg path'); const layout = TRACKS[card.dataset.track]?.points;
+    if (!path || !layout?.length) return;
+    const curve = new THREE.CatmullRomCurve3(layout.map(([x, z]) => new THREE.Vector3(x, 0, z)), true, 'centripetal'); curve.arcLengthDivisions = 1200;
+    const samples = Array.from({ length: 180 }, (_, i) => curve.getPointAt(i / 180));
+    const minX = Math.min(...samples.map((point) => point.x)); const maxX = Math.max(...samples.map((point) => point.x));
+    const minZ = Math.min(...samples.map((point) => point.z)); const maxZ = Math.max(...samples.map((point) => point.z));
+    const paddingX = 14; const paddingY = 12; const scale = Math.min((180 - paddingX * 2) / Math.max(1, maxX - minX), (100 - paddingY * 2) / Math.max(1, maxZ - minZ));
+    const centerX = (minX + maxX) * .5; const centerZ = (minZ + maxZ) * .5;
+    const d = samples.map((point, index) => {
+      const x = 90 + (point.x - centerX) * scale; const y = 50 + (point.z - centerZ) * scale;
+      return `${index ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`;
+    }).join(' ') + ' Z';
+    path.setAttribute('d', d);
+  });
+}
+
 function addRouteGuides() {
   // 用少量 InstancedMesh 箭头明确赛道行驶方向；箭头贴在柏油表面并放在车道一侧，避免遮住车辆。
   const shape = new THREE.Shape();
@@ -699,6 +718,7 @@ addEventListener('keyup', (event) => keys.delete(event.code));
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 
 buildWorld(selectedTrackKey);
+updateCircuitIcons();
 window.__THREE_GAME_DIAGNOSTICS__ = () => ({
   renderer: { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, dpr: renderer.getPixelRatio() },
   state: { started, finished, paused, track: selectedTrackKey, lap, elapsed: Number(elapsed.toFixed(3)), speed: Number(speed.toFixed(2)), kmh: Math.round(Math.abs(speed) * SPEED_TO_KMH), gear: currentGear === 0 ? 'N' : currentGear, rpm: Math.round(engineRpm), throttle: Number(throttleInput.toFixed(2)), camera: cameraMode === 1 ? 'near' : 'far' },
