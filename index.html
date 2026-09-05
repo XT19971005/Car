@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Apex Ridge — Low Poly Racing</title>
+    <title>神力科莎 — Low Poly Racing Prototype</title>
   </head>
   <body>
     <div id="game"></div>
 
     <div id="race-ui" class="hidden">
       <header class="race-topbar">
-        <div class="race-id"><i></i><span>APEX RIDGE</span><small>TIME ATTACK</small></div>
+        <div class="race-id"><i></i><span>神力科莎</span><small>TIME ATTACK</small></div>
         <div class="top-actions">
           <button id="view-button" class="icon-button" type="button">视角 <kbd>C</kbd></button>
           <button id="pause-button" class="icon-button" type="button">暂停 <kbd>ESC</kbd></button>
@@ -62,21 +62,21 @@
       <div class="menu-grid"></div>
       <div class="menu-glow"></div>
       <header class="menu-brand">
-        <div class="logo-mark">AR</div>
-        <div><strong>APEX RIDGE</strong><span>LOW POLY MOTORSPORT</span></div>
-        <p>BUILD 0.4 · THREE.JS PROTOTYPE</p>
+        <div class="logo-mark">AC</div>
+        <div><strong>神力科莎</strong><span>LOW POLY RACING</span></div>
+        <p>BUILD 0.5 · THREE.JS PROTOTYPE</p>
       </header>
 
       <section class="menu-screen active" data-screen="mode">
         <div class="screen-copy">
           <p class="eyebrow">WELCOME, DRIVER</p>
-          <h1>驾驭山脊<br><em>挑战极限</em></h1>
-          <p class="lead">四条传奇欧洲赛道，一台俱乐部赛车，一场干净利落的单人计时赛。</p>
+          <h1>神力科莎<br><em>赛道体验</em></h1>
+          <p class="lead">四条传奇欧洲赛道，四台可选赛车，一场干净利落的单人计时赛。</p>
         </div>
         <div class="menu-content">
           <div class="section-heading"><span>01</span><h2>选择比赛模式</h2><small>SELECT MODE</small></div>
           <button class="select-row selected" data-next="circuit" type="button">
-            <b>单人计时赛</b><span>3 圈 · 与自己的最佳时间竞争</span><i>开始选择</i>
+            <b>单人计时赛</b><span>3 圈 · 选择赛道与赛车</span><i>开始选择</i>
           </button>
           <button class="select-row locked" type="button" disabled><b>快速比赛</b><span>AI 对手 · 后续版本开放</span><i>锁定</i></button>
           <button class="select-row locked" type="button" disabled><b>在线追逐</b><span>多人竞速 · 规划中</span><i>锁定</i></button>
@@ -87,19 +87,19 @@
         <div class="menu-content wide">
           <div class="section-heading"><span>02</span><h2>选择赛道</h2><small>SELECT CIRCUIT</small></div>
           <div class="circuit-grid">
-            <button class="circuit-card selected" data-track="monza" data-next="options" type="button">
+            <button class="circuit-card selected" data-track="monza" data-next="car" type="button">
               <div class="circuit-art monza"><span>可比赛</span><svg viewBox="0 0 180 100"><path d=""/></svg></div>
               <div><small>意大利 · 蒙扎</small><strong>蒙扎</strong><p>5.793 KM · 11 弯 · 极速长直道</p></div>
             </button>
-            <button class="circuit-card" data-track="spa" data-next="options" type="button">
+            <button class="circuit-card" data-track="spa" data-next="car" type="button">
               <div class="circuit-art spa"><span>可比赛</span><svg viewBox="0 0 180 100"><path d=""/></svg></div>
               <div><small>比利时 · 阿登</small><strong>斯帕-弗朗科尔尚</strong><p>7.004 KM · 19 弯 · Eau Rouge</p></div>
             </button>
-            <button class="circuit-card" data-track="silverstone" data-next="options" type="button">
+            <button class="circuit-card" data-track="silverstone" data-next="car" type="button">
               <div class="circuit-art silverstone"><span>可比赛</span><svg viewBox="0 0 180 100"><path d=""/></svg></div>
               <div><small>英国 · 北安普敦郡</small><strong>银石</strong><p>5.890 KM · 18 弯 · 高速连续弯</p></div>
             </button>
-            <button class="circuit-card" data-track="nurburgring" data-next="options" type="button">
+            <button class="circuit-card" data-track="nurburgring" data-next="car" type="button">
               <div class="circuit-art nurburgring"><span>可比赛</span><svg viewBox="0 0 180 100"><path d=""/></svg></div>
               <div><small>德国 · 艾费尔</small><strong>纽博格林 GP</strong><p>5.148 KM · 15 弯 · 高低落差</p></div>
             </button>
@@ -108,30 +108,55 @@
         </div>
       </section>
 
+      <section class="menu-screen" data-screen="car">
+        <div class="menu-content wide">
+          <div class="section-heading"><span>03</span><h2>选择车辆</h2><small>SELECT CAR</small></div>
+          <div class="car-grid">
+            <button class="car-card selected" data-car="clubsport" data-next="options" type="button">
+              <div class="car-card-art clubsport"><span>已选</span><img data-car-preview="sedan-sports" alt="KR-01 Clubsport" /><em>GT · RWD</em></div>
+              <div><small>KR-01 / CLUBSPORT</small><strong>KR-01 CLUBSPORT</strong><p>320 HP · 302 KM/H · 3.4 S</p></div>
+            </button>
+            <button class="car-card" data-car="gtcup" data-next="options" type="button">
+              <div class="car-card-art gtcup"><span>可用</span><img data-car-preview="race" alt="KR-02 GT Cup" /><em>GT · MR</em></div>
+              <div><small>KR-02 / GT CUP</small><strong>KR-02 GT CUP</strong><p>380 HP · 318 KM/H · 3.0 S</p></div>
+            </button>
+            <button class="car-card" data-car="future" data-next="options" type="button">
+              <div class="car-card-art future"><span>可用</span><img data-car-preview="race-future" alt="KR-03 Future GT" /><em>HYPER · AWD</em></div>
+              <div><small>KR-03 / FUTURE GT</small><strong>KR-03 FUTURE GT</strong><p>430 HP · 332 KM/H · 2.7 S</p></div>
+            </button>
+            <button class="car-card" data-car="touring" data-next="options" type="button">
+              <div class="car-card-art touring"><span>可用</span><img data-car-preview="hatchback-sports" alt="KR-04 Touring" /><em>TOURING · FWD</em></div>
+              <div><small>KR-04 / TOURING</small><strong>KR-04 TOURING</strong><p>280 HP · 278 KM/H · 4.1 S</p></div>
+            </button>
+          </div>
+          <button class="back-button" data-back="circuit" type="button">← 返回赛道</button>
+        </div>
+      </section>
+
       <section class="menu-screen" data-screen="options">
         <div class="menu-content">
-          <div class="section-heading"><span>03</span><h2>比赛设置</h2><small>RACE OPTIONS</small></div>
+          <div class="section-heading"><span>04</span><h2>比赛设置</h2><small>RACE OPTIONS</small></div>
           <button class="option-row" id="laps-option" type="button"><span>比赛圈数</span><strong><i>−</i><b id="laps-value">3 圈</b><i>+</i></strong></button>
           <button class="option-row" id="assist-option" type="button"><span>驾驶辅助</span><strong><b id="assist-value">标准</b><i>›</i></strong></button>
           <button class="option-row static" type="button"><span>天气 / 路况</span><strong><b>晴朗 · 干地</b></strong></button>
-          <div class="menu-actions"><button class="back-button" data-back="circuit" type="button">← 返回</button><button class="primary-button" data-next="ready" type="button">确认设置 →</button></div>
+          <div class="menu-actions"><button class="back-button" data-back="car" type="button">← 返回车辆</button><button class="primary-button" data-next="ready" type="button">确认设置 →</button></div>
         </div>
       </section>
 
       <section class="menu-screen" data-screen="ready">
         <div class="menu-content">
-          <div class="section-heading"><span>04</span><h2>准备发车</h2><small>READY TO LAUNCH</small></div>
+          <div class="section-heading"><span>05</span><h2>准备发车</h2><small>READY TO LAUNCH</small></div>
           <div class="briefing">
             <div><span>比赛模式</span><strong>单人计时赛</strong></div>
             <div><span>赛道</span><strong id="ready-track">蒙扎</strong></div>
             <div><span>圈数</span><strong id="ready-laps">3 圈</strong></div>
-            <div><span>车辆</span><strong>KR-01 CLUBSPORT</strong></div>
+            <div><span>车辆</span><strong id="ready-car">KR-01 CLUBSPORT</strong></div>
           </div>
           <button id="start" class="launch-button" type="button"><span>启动引擎</span><strong>开始比赛</strong><i>→</i></button>
           <button class="back-button" data-back="options" type="button">← 返回设置</button>
         </div>
       </section>
-      <footer class="menu-footer"><span>WASD / 方向键驾驶</span><span>R 回到最近赛道</span><span>C 切换视角（默认近景）</span></footer>
+      <footer class="menu-footer"><span>车手</span><span>车库 · 选择车辆</span><span>选项</span><span>WASD / 方向键驾驶</span></footer>
     </main>
 
     <div id="pause-overlay" class="hidden">

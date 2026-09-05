@@ -57,6 +57,22 @@ canvas { display: block; }
 .circuit-card small { color: var(--orange); font-size: 9px; letter-spacing: .1em; }
 .circuit-card strong { display: block; margin: 3px 0; font: 800 24px "Barlow Condensed"; }
 .circuit-card p { margin: 0; color: #8f949c; font-size: 10px; }
+.car-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.car-card { padding: 0; overflow: hidden; border: 1px solid #fff2; border-bottom: 4px solid #555b64; background: #15191f; text-align: left; cursor: pointer; transition: .2s; }
+.car-card:hover, .car-card.selected { border-bottom-color: var(--orange); transform: translateY(-4px); }
+.car-card-art { position: relative; height: min(22vh, 180px); overflow: hidden; background: linear-gradient(145deg, #2a3541, #121920); }
+.car-card-art::before { content: ""; position: absolute; width: 150%; height: 55%; left: -25%; bottom: -25%; background: #0d171d; transform: rotate(-8deg); }
+.car-card-art.clubsport { background: linear-gradient(145deg, #5c332c, #1b232a); }
+.car-card-art.gtcup { background: linear-gradient(145deg, #245469, #101c2a); }
+.car-card-art.future { background: linear-gradient(145deg, #5a4b25, #1c2027); }
+.car-card-art.touring { background: linear-gradient(145deg, #384c3f, #121b1c); }
+.car-card-art img { position: absolute; z-index: 1; left: 12%; top: 9%; width: 76%; height: 82%; object-fit: contain; image-rendering: auto; filter: drop-shadow(0 8px 7px #000b); transform: scale(1.35); }
+.car-card-art span { position: absolute; z-index: 2; top: 12px; left: 12px; padding: 5px 9px; background: var(--orange); font-size: 9px; font-weight: 800; }
+.car-card-art em { position: absolute; z-index: 2; right: 12px; bottom: 10px; color: #ffffffb8; font: 700 9px "Barlow Condensed"; letter-spacing: .14em; font-style: normal; }
+.car-card > div:last-child { padding: 13px 15px 16px; }
+.car-card small { color: var(--orange); font-size: 9px; letter-spacing: .1em; }
+.car-card strong { display: block; margin: 3px 0; font: 800 20px "Barlow Condensed"; }
+.car-card p { margin: 0; color: #8f949c; font-size: 10px; }
 .back-button, .primary-button { margin-top: 18px; border: 0; padding: 12px 20px; background: transparent; color: #a7abb1; cursor: pointer; font-weight: 700; }
 .back-button:hover { color: white; }
 .primary-button { margin-left: auto; background: var(--orange); color: white; }
@@ -142,6 +158,9 @@ kbd { margin-left: 5px; color: #ffffff88; font-size: 8px; }
   .circuit-grid { grid-template-columns: 1fr; }
   .circuit-card:not(.selected) { display: none; }
   .circuit-art { height: 175px; }
+  .car-grid { grid-template-columns: 1fr; }
+  .car-card:not(.selected) { display: none; }
+  .car-card-art { height: 175px; }
   .select-row { grid-template-columns: 1fr auto; }
   .select-row span { display: none; }
   .track-panel { display: none; }
@@ -156,4 +175,6 @@ kbd { margin-left: 5px; color: #ffffff88; font-size: 8px; }
 @media (min-width: 761px) and (max-width: 1100px) {
   .circuit-grid { grid-template-columns: repeat(2, 1fr); }
   .circuit-art { height: 145px; }
+  .car-grid { grid-template-columns: repeat(2, 1fr); }
+  .car-card-art { height: 145px; }
 }

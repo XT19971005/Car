@@ -50,8 +50,18 @@ const TRACKS = {
   },
 };
 
+// 车辆都来自公共 Kenney Car Kit；模型、菜单预览和性能参数由同一份配置驱动。
+const CAR_OPTIONS = {
+  clubsport: { name: 'KR-01 CLUBSPORT', model: 'sedan-sports.glb', preview: 'sedan-sports', topSpeedKmh: 302, launchAcceleration: 12.4 },
+  gtcup: { name: 'KR-02 GT CUP', model: 'race.glb', preview: 'race', topSpeedKmh: 318, launchAcceleration: 13.6 },
+  future: { name: 'KR-03 FUTURE GT', model: 'race-future.glb', preview: 'race-future', topSpeedKmh: 332, launchAcceleration: 14.7 },
+  touring: { name: 'KR-04 TOURING', model: 'hatchback-sports.glb', preview: 'hatchback-sports', topSpeedKmh: 278, launchAcceleration: 11.2 },
+};
+
 let selectedTrackKey = 'monza';
 let selectedTrack = TRACKS[selectedTrackKey];
+let selectedCarKey = 'clubsport';
+let activeCarSpec = CAR_OPTIONS[selectedCarKey];
 let totalLaps = 3;
 let assistMode = 0;
 let paused = false;
@@ -380,6 +390,8 @@ function buildWorld(key) {
 }
 
 let car = new THREE.Group(); scene.add(car);
+let playerCarModel = null;
+let carLoadGeneration = 0;
 const headLampMat = new THREE.MeshBasicMaterial({ color: 0xfff5d0 }); const tailLampMat = new THREE.MeshBasicMaterial({ color: 0xf22a1d });
 for (const x of [-.78, .78]) {
   const head = new THREE.Mesh(new THREE.BoxGeometry(.22, .1, .06), headLampMat); head.position.set(x, .7, 2.08); car.add(head);
@@ -388,35 +400,44 @@ for (const x of [-.78, .78]) {
 const headGlow = new THREE.PointLight(0xffe5bd, 1.15, 10); headGlow.position.set(0, .62, 2.25); car.add(headGlow);
 function fitPlayerCar(model, targetLength = 4.35) {
   const rawBox = new THREE.Box3().setFromObject(model); const rawSize = rawBox.getSize(new THREE.Vector3()); model.scale.setScalar(targetLength / rawSize.z); model.updateMatrixWorld(true);
-  const scaledBox = new THREE.Box3().setFromObject(model); model.position.y = -scaledBox.min.y; model.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); car.add(model);
-}
-function addFallbackRacingCar() {
-  const mtl = new MTLLoader(); mtl.setPath(assetBase); mtl.load('raceCarRed.mtl', (materials) => { materials.preload(); const loader = new OBJLoader(); loader.setMaterials(materials); loader.setPath(assetBase); loader.load('raceCarRed.obj', fitPlayerCar); });
+  const scaledBox = new THREE.Box3().setFromObject(model); model.position.y = -scaledBox.min.y; model.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); playerCarModel = model; car.add(model);
 }
 const carLoader = new GLTFLoader();
-// 换回上一版使用的 Kenney Car Kit 运动轿车，比例更适合当前第三人称追车镜头。
-const primaryCarPath = `${publicBase}assets/kenney-selected/car-kit/Models/GLB%20format/sedan-sports.glb`;
+const carModelBase = `${publicBase}assets/kenney-selected/car-kit/Models/GLB%20format/`;
 const fallbackCarLoader = new GLTFLoader();
-fallbackCarLoader.setPath(`${publicBase}assets/kenney-selected/car-kit/Models/GLB%20format/`);
-carLoader.load(
-  primaryCarPath,
-  (gltf) => fitPlayerCar(gltf.scene),
-  undefined,
-  () => fallbackCarLoader.load('sedan-sports.glb', (gltf) => fitPlayerCar(gltf.scene), undefined, addFallbackRacingCar),
-);
+fallbackCarLoader.setPath(carModelBase);
+function clearPlayerCarModel() {
+  if (!playerCarModel) return;
+  car.remove(playerCarModel); playerCarModel = null;
+}
+function applyCarSpec(key) {
+  activeCarSpec = CAR_OPTIONS[key] || CAR_OPTIONS.clubsport;
+  maxSpeed = activeCarSpec.topSpeedKmh / SPEED_TO_KMH;
+  launchAcceleration = activeCarSpec.launchAcceleration;
+  const readyCar = $('#ready-car'); if (readyCar) readyCar.textContent = activeCarSpec.name;
+}
+function loadSelectedCar() {
+  const spec = activeCarSpec; const generation = ++carLoadGeneration;
+  clearPlayerCarModel();
+  carLoader.load(`${carModelBase}${spec.model}`, (gltf) => {
+    if (generation !== carLoadGeneration) return;
+    fitPlayerCar(gltf.scene, 4.35);
+  }, undefined, () => {
+    if (generation !== carLoadGeneration || spec.model === 'sedan-sports.glb') return;
+    fallbackCarLoader.load('sedan-sports.glb', (gltf) => { if (generation === carLoadGeneration) fitPlayerCar(gltf.scene, 4.35); });
+  });
+}
 
 let started = false; let finished = false; let countdownActive = false; let countdownTimer = null; let elapsed = 0; let lap = 0; let speed = 0; let heading = 0; let lastProgress = 0; let lastTime = performance.now(); let hudAccumulator = 0; let wrongWayTime = 0;
 let velocity = new THREE.Vector3(); let yawRate = 0;
 const bestTimes = new Map();
 // 速度单位标定：1 world unit 对应 1 m；当前 3.2 km/h·unit⁻¹，
 // 让 200 km/h 对应约 62.5 m/s 的实际位移，最高速约 302 km/h。
-const TOP_SPEED_KMH = 302;
 const SPEED_TO_KMH = 3.2;
-const maxSpeed = TOP_SPEED_KMH / SPEED_TO_KMH;
+let maxSpeed = activeCarSpec.topSpeedKmh / SPEED_TO_KMH;
 const reverseMaxSpeed = 6.0;
-// 起步加速度按 GT 赛车重新标定：低速扭矩更饱满，0–100 km/h 约 3.1–3.4 秒。
-// 最高速仍由 maxSpeed 限制，增强只集中在起步和低速出弯，避免整段速度失控。
-const launchAcceleration = 12.4;
+// 起步加速度按 GT 赛车重新标定：不同车型有不同的低速扭矩和最高速。
+let launchAcceleration = activeCarSpec.launchAcceleration;
 const launchTorqueBoost = 1.2;
 const reverseAcceleration = 3.8;
 const brakeDeceleration = 17.5;
@@ -700,10 +721,21 @@ function updateCamera(dt) {
 }
 const screens = [...document.querySelectorAll('.menu-screen')];
 function showScreen(name) { screens.forEach((screen) => screen.classList.toggle('active', screen.dataset.screen === name)); }
+function updateCarMenu() {
+  document.querySelectorAll('[data-car]').forEach((card) => card.classList.toggle('selected', card.dataset.car === selectedCarKey));
+  document.querySelectorAll('[data-car-preview]').forEach((image) => {
+    const spec = CAR_OPTIONS[image.closest('[data-car]')?.dataset.car];
+    if (spec) image.src = `${publicBase}assets/kenney-selected/car-kit/Previews/${spec.preview}.png`;
+  });
+  const readyCar = $('#ready-car'); if (readyCar) readyCar.textContent = activeCarSpec.name;
+}
 document.querySelectorAll('[data-next]').forEach((button) => button.addEventListener('click', () => { if (button.dataset.next === 'ready') $('#ready-laps').textContent = `${totalLaps} 圈`; showScreen(button.dataset.next); }));
 document.querySelectorAll('[data-back]').forEach((button) => button.addEventListener('click', () => showScreen(button.dataset.back)));
 document.querySelectorAll('[data-track]').forEach((button) => button.addEventListener('click', () => {
   document.querySelectorAll('[data-track]').forEach((card) => card.classList.toggle('selected', card === button)); buildWorld(button.dataset.track);
+}));
+document.querySelectorAll('[data-car]').forEach((button) => button.addEventListener('click', () => {
+  selectedCarKey = button.dataset.car; applyCarSpec(selectedCarKey); updateCarMenu(); loadSelectedCar();
 }));
 $('#laps-option').addEventListener('click', (event) => { if (event.target.tagName === 'I') totalLaps = event.target.textContent === '+' ? (totalLaps === 3 ? 5 : 3) : (totalLaps === 5 ? 3 : 5); $('#laps-value').textContent = `${totalLaps} 圈`; });
 $('#assist-option').addEventListener('click', () => { assistMode = (assistMode + 1) % 3; $('#assist-value').textContent = ['标准', '辅助', '关闭'][assistMode]; });
@@ -719,9 +751,12 @@ addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; cam
 
 buildWorld(selectedTrackKey);
 updateCircuitIcons();
+applyCarSpec(selectedCarKey);
+updateCarMenu();
+loadSelectedCar();
 window.__THREE_GAME_DIAGNOSTICS__ = () => ({
   renderer: { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, dpr: renderer.getPixelRatio() },
-  state: { started, finished, paused, track: selectedTrackKey, lap, elapsed: Number(elapsed.toFixed(3)), speed: Number(speed.toFixed(2)), kmh: Math.round(Math.abs(speed) * SPEED_TO_KMH), gear: currentGear === 0 ? 'N' : currentGear, rpm: Math.round(engineRpm), throttle: Number(throttleInput.toFixed(2)), camera: cameraMode === 1 ? 'near' : 'far' },
+  state: { started, finished, paused, track: selectedTrackKey, car: selectedCarKey, lap, elapsed: Number(elapsed.toFixed(3)), speed: Number(speed.toFixed(2)), kmh: Math.round(Math.abs(speed) * SPEED_TO_KMH), gear: currentGear === 0 ? 'N' : currentGear, rpm: Math.round(engineRpm), throttle: Number(throttleInput.toFixed(2)), camera: cameraMode === 1 ? 'near' : 'far' },
   track: { width: trackWidth, worldScale, length: Number(trackLength.toFixed(1)), scenery: sceneryClaims.length },
 });
 function animate(now) {
