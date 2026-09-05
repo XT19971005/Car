@@ -107,6 +107,17 @@ kbd { margin-left: 5px; color: #ffffff88; font-size: 8px; }
 .track-name span { color: var(--orange); font: 900 20px "Barlow Condensed"; }
 .track-name strong { font-size: 12px; }
 .track-name small { color: #999fa7; font-size: 8px; }
+.route-guide { position: absolute; top: 86px; left: 50%; min-width: 190px; padding: 9px 18px 10px; transform: translateX(-50%); border-top: 2px solid #49dcff; background: linear-gradient(110deg, #07151dcc, #112731b8); text-align: center; backdrop-filter: blur(8px); }
+.route-guide::before { content: "↑"; display: inline-block; margin-right: 8px; color: #49dcff; font: 900 22px/1 "Barlow Condensed"; transition: transform .18s ease; }
+.route-guide[data-turn="left"]::before { transform: rotate(-45deg); }
+.route-guide[data-turn="right"]::before { transform: rotate(45deg); }
+.route-guide span { display: block; color: #78e7ff; font: 800 8px "Barlow Condensed"; letter-spacing: .2em; }
+.route-guide strong { display: inline-block; font: 900 19px/1.15 "Barlow Condensed"; letter-spacing: .05em; }
+.route-guide small { display: block; margin-top: 2px; color: #b6c6cd; font-size: 8px; letter-spacing: .08em; }
+.wrong-way { position: absolute; top: 145px; left: 50%; min-width: 310px; padding: 12px 22px; transform: translateX(-50%); border: 2px solid #ff321c; background: #240a08e8; text-align: center; animation: wrong-way-pulse .62s ease-in-out infinite alternate; }
+.wrong-way strong { display: block; color: #ff4d2f; font: 900 25px/1 "Barlow Condensed"; letter-spacing: .14em; }
+.wrong-way span { display: block; margin-top: 5px; color: white; font-size: 9px; }
+@keyframes wrong-way-pulse { to { box-shadow: 0 0 28px #ff321c88; transform: translateX(-50%) scale(1.025); } }
 .telemetry { position: absolute; left: 50%; bottom: 20px; width: min(485px, 52vw); transform: translateX(-50%); padding: 12px 16px 11px; background: linear-gradient(110deg, #080b0fea, #171b20d8); border-top: 2px solid #fff7; clip-path: polygon(5% 0, 95% 0, 100% 28%, 96% 100%, 4% 100%, 0 28%); }
 .rpm-scale { display: flex; justify-content: space-between; color: #a3a7ac; font: 700 8px "Barlow Condensed"; }
 .rpm-track { height: 8px; margin: 3px 0 4px; background: #ffffff1d; overflow: hidden; }
@@ -141,6 +152,8 @@ kbd { margin-left: 5px; color: #ffffff88; font-size: 8px; }
   .select-row { grid-template-columns: 1fr auto; }
   .select-row span { display: none; }
   .track-panel { display: none; }
+  .route-guide { top: 72px; min-width: 165px; padding: 7px 12px; }
+  .wrong-way { top: 128px; min-width: min(310px, 86vw); }
   .timing-panel { left: 14px; top: 78px; width: 210px; }
   .race-topbar { margin: 10px 14px; }
   .race-id small, .icon-button kbd, #menu-button { display: none; }
