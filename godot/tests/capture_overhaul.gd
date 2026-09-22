@@ -19,7 +19,7 @@ func run() -> void:
 	game.show_menu()
 	await shot("MENU_NineCircuits")
 	for key in ["clear", "overcast", "rain"]:
-		game.weather.set_weather(key)
+		game._set_weather(key)
 		game.start_race()
 		game.state = game.State.RACING
 		game.ui.countdown_label.text = ""

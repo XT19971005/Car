@@ -47,9 +47,9 @@ func run():
 				if not settled or peak_slip>1.4: failures+=1
 				if "--baseline" not in OS.get_cmdline_user_args():
 					if not reversed: failures+=1
-					if initial_speed==10 and early<15: failures+=1
-					if initial_speed==25 and early<(6.8 if wet>0 else 9.0): failures+=1
-					if initial_speed==55 and full>22: failures+=1
+					if initial_speed==10 and early<18: failures+=1
+					if initial_speed==25 and full<(42.0 if wet>0 else 57.0): failures+=1
+					if initial_speed==55 and (full<(15.0 if wet>0 else 21.0) or full>29.0): failures+=1
 	game.queue_free()
 	await process_frame
 	print("STEERING RESULT failures=",failures)

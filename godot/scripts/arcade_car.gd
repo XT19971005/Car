@@ -138,7 +138,7 @@ func shift_gear(direction: int) -> bool:
 	return true
 
 func steering_angle_at_speed(forward_speed: float) -> float:
-	return .62 / (1.0 + pow(absf(forward_speed) / 28.0, 2.0))
+	return .72 / (1.0 + pow(absf(forward_speed) / 28.0, 2.0))
 
 func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool, offroad: bool) -> void:
 	var steering_response := 22.0 if absf(turn) <= .05 else 26.0 if steering * turn < 0 else 18.0
@@ -187,8 +187,8 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 	# Model forward is +Z; a driver's right turn rotates toward -X.
 	var desired_yaw := -steering * longitudinal / float(profile.wheelbase) * tan(steering_angle)
 	# More corner authority at road speeds, retaining the high-speed stability cap.
-	var corner_authority := lerpf(2.05, 1.65, smoothstep(30.0, 60.0, absf(longitudinal)))
-	var yaw_limit := minf(1.8, grip * corner_authority * (1.0 - brake * .20) / maxf(absf(longitudinal), 3.0))
+	var corner_authority := lerpf(2.85, 2.25, smoothstep(30.0, 60.0, absf(longitudinal)))
+	var yaw_limit := minf(2.2, grip * corner_authority * (1.0 - brake * .20) / maxf(absf(longitudinal), 3.0))
 	desired_yaw = clampf(desired_yaw, -yaw_limit, yaw_limit)
 	yaw_rate = lerpf(yaw_rate, desired_yaw, 1.0 - exp(-dt * (32.0 if not offroad else 12.0)))
 	heading += yaw_rate * dt
@@ -197,7 +197,7 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 	forward = Vector3(sin(heading), 0, cos(heading))
 	right = Vector3(forward.z, 0, -forward.x)
 	longitudinal = momentum.dot(forward)
-	lateral = momentum.dot(right) * exp(-grip * 2.0 * dt)
+	lateral = momentum.dot(right) * exp(-grip * 2.6 * dt)
 	var vertical := velocity.y
 	velocity = forward * longitudinal + right * lateral
 	# Floor snapping handles grounded adhesion. Forcing gravity into a floor every

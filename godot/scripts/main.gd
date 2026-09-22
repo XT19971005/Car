@@ -39,6 +39,7 @@ var records: Dictionary = {}
 var volume := 0.7
 var fullscreen := false
 var preferences := ConfigFile.new()
+var preferences_path := "user://driver.cfg"
 var test_mode := false
 var record_this_race := false
 var gate_marker: Node3D
@@ -428,7 +429,7 @@ func _update_camera(dt: float, snap := false) -> void:
 	camera_yaw = car.heading
 	var basis_yaw := Basis(Vector3.UP, camera_yaw + orbit)
 	car.body_visual.visible = camera_mode != 7
-	ui.speed_label.get_parent().get_parent().get_parent().visible = selected_vehicle == "r6" or camera_mode not in [2, 3, 6]
+	ui.speed_label.get_parent().get_parent().get_parent().visible = camera_mode not in [2, 3, 6]
 	var onboard: bool = camera_mode in [2, 3, 6, 7]
 	if camera_mode < 2:
 		var offset := Vector3(0, 2.25, -6.7) if camera_mode == 0 else Vector3(0, 3.25, -9.5)
@@ -465,7 +466,7 @@ func _update_camera(dt: float, snap := false) -> void:
 func _load_preferences() -> void:
 	if test_mode:
 		return
-	if preferences.load("user://driver.cfg") == OK:
+	if preferences.load(preferences_path) == OK:
 		automatic_gears = true
 		volume = clampf(float(preferences.get_value("settings", "volume", 0.7)), 0, 1)
 		fullscreen = bool(preferences.get_value("settings", "fullscreen", false))
@@ -491,7 +492,7 @@ func _save_preferences() -> void:
 	preferences.set_value("settings", "camera", camera_mode)
 	preferences.set_value("settings", "reduced_motion", reduced_motion)
 	preferences.set_value("records", "static_v3_weather", records)
-	var error := preferences.save("user://driver.cfg")
+	var error := preferences.save(preferences_path)
 	if error != OK:
 		push_warning("Could not save driver preferences: %s" % error_string(error))
 

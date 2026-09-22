@@ -34,6 +34,7 @@ func run() -> void:
 	check(game.weather.sun.rotation_degrees.x < -20, "Leaving sunset restores weather sun angle")
 	game.ui.start_button.pressed.emit()
 	while game.loading_race: await process_frame
+	check(game.weather.mode == "rain" and game.weather.rain.emitting, "Starting race preserves selected weather")
 	game.state = game.State.RACING
 	var route: Dictionary = game.track.at_progress(.42)
 	var right := Vector3(route.tangent.z, 0, -route.tangent.x).normalized()
