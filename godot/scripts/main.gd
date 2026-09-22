@@ -75,7 +75,7 @@ func _ready() -> void:
 	ui.fullscreen_changed.connect(_set_fullscreen)
 	ui.vehicle_selected.connect(select_vehicle)
 	ui.cockpit_selected.connect(func(enabled: bool): camera_mode = 2 if enabled else 0; _update_camera(1, true))
-	ui.reduced_motion_changed.connect(func(enabled: bool): reduced_motion = enabled)
+	ui.reduced_motion_changed.connect(_set_reduced_motion)
 	ui.cockpit_choice.set_pressed_no_signal(camera_mode == 2)
 	ui.reduced_motion.set_pressed_no_signal(reduced_motion)
 	for i in ui.vehicle_choice.item_count:
@@ -231,6 +231,7 @@ func resume_race() -> void:
 
 func switch_camera() -> void:
 	camera_mode = (camera_mode + 1) % 3
+	ui.cockpit_choice.set_pressed_no_signal(camera_mode == 2)
 	orbit = 0.0
 	_update_camera(1.0, true)
 
@@ -389,7 +390,15 @@ func _update_camera(dt: float, snap := false) -> void:
 		camera.rotation.x += car.shift_feedback * .008 * feedback
 	else:
 		var desired: Vector3 = car.position + basis_yaw * offset
-		camera.position = desired if snap else camera.position.lerp(desired, blend)
+		var candidate: Vector3 = desired if snap else camera.position.lerp(desired, blend)
+		# Keep the chase view on the vehicle side of walls, terrain and bridges.
+		var anchor := car.position + Vector3.UP
+		var query := PhysicsRayQueryParameters3D.create(anchor, candidate)
+		query.exclude = [car.get_rid()]
+		var obstruction := get_world_3d().direct_space_state.intersect_ray(query)
+		if not obstruction.is_empty():
+			candidate = obstruction.position + (anchor - candidate).normalized() * .28
+		camera.position = candidate
 		camera.look_at(car.position + Vector3.UP * 0.9 + Vector3(sin(camera_yaw), 0, cos(camera_yaw)) * 3.0)
 	camera.fov = 72 if camera_mode == 2 else 65 + minf(absf(car.speed) * .065, 5.0)
 	if rear_camera:
@@ -431,12 +440,22 @@ func _save_preferences() -> void:
 
 func _set_volume(value: float) -> void:
 	volume = value
+	if ui: ui.volume_slider.set_value_no_signal(value)
+	if front: front.get_node("%Volume").set_value_no_signal(value)
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(value, 0.0001)))
 	AudioServer.set_bus_mute(0, value <= 0.001)
 	_save_preferences()
 
+func _set_reduced_motion(value: bool) -> void:
+	reduced_motion = value
+	if ui: ui.reduced_motion.set_pressed_no_signal(value)
+	if front: front.get_node("%Motion").set_pressed_no_signal(value)
+	_save_preferences()
+
 func _set_fullscreen(value: bool) -> void:
 	fullscreen = value
+	if ui: ui.fullscreen_toggle.set_pressed_no_signal(value)
+	if front: front.get_node("%Fullscreen").set_pressed_no_signal(value)
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if value else DisplayServer.WINDOW_MODE_WINDOWED)
 	_save_preferences()
@@ -451,9 +470,9 @@ func _build_front_end() -> void:
 	front = $RaceInterface/Root/FrontEnd
 	front.race_requested.connect(show_menu)
 	front.car_selected.connect(_choose_showroom_car)
-	front.volume_changed.connect(func(value: float): _set_volume(value); ui.volume_slider.set_value_no_signal(value))
-	front.motion_changed.connect(func(value: bool): reduced_motion = value; ui.reduced_motion.set_pressed_no_signal(value))
-	front.fullscreen_changed.connect(func(value: bool): _set_fullscreen(value); ui.fullscreen_toggle.set_pressed_no_signal(value))
+	front.volume_changed.connect(_set_volume)
+	front.motion_changed.connect(_set_reduced_motion)
+	front.fullscreen_changed.connect(_set_fullscreen)
 	front.exit_requested.connect(func(): _save_preferences(); get_tree().quit())
 	front.get_node("Margin/Stack/SettingsPanel/Volume").set_value_no_signal(volume)
 	front.get_node("Margin/Stack/SettingsPanel/Motion").set_pressed_no_signal(reduced_motion)
