@@ -1,6 +1,7 @@
 extends CharacterBody3D
 ## Assisted arcade handling. Heading and lateral momentum are separate, with swept collisions.
 const TOP_SPEED := 76.0
+var surface_wetness := 0.0
 var speed := 0.0
 var heading := 0.0
 var steering := 0.0
@@ -10,6 +11,7 @@ var yaw_rate := 0.0
 var rpm := 950.0
 var gear := 0
 var shift_timer := 0.0
+var chassis_collision: CollisionShape3D
 var body_visual: Node3D
 var wheel_nodes: Array[Node3D] = []
 var wheel_rotations: Array[Vector3] = []
@@ -31,6 +33,7 @@ func _ready() -> void:
 	floor_constant_speed = true
 	safe_margin = 0.025
 	var collider := CollisionShape3D.new()
+	chassis_collision = collider
 	# Rounded underbody avoids box corners snagging on shallow road seams.
 	var shape := CapsuleShape3D.new()
 	shape.radius = 0.75
@@ -46,6 +49,11 @@ func _ready() -> void:
 func configure_vehicle(key: String) -> void:
 	vehicle_key = key
 	profile = preload("res://scripts/car_catalog.gd").CARS[key]
+	if chassis_collision:
+		var hull := chassis_collision.shape as CapsuleShape3D
+		hull.radius = float(profile.width) * .41
+		hull.height = float(profile.length) - .24
+		chassis_collision.position.y = hull.radius + .03
 	for child in body_visual.get_children():
 		body_visual.remove_child(child)
 		child.queue_free()
@@ -99,13 +107,13 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 	var right := Vector3(forward.z, 0, -forward.x)
 	var longitudinal := velocity.dot(forward)
 	var lateral := velocity.dot(right)
-	var grip := 3.0 if offroad else float(profile.grip)
+	var grip := (3.0 if offroad else float(profile.grip)) * lerpf(1.0, .74, surface_wetness)
 	if handbrake:
 		grip *= 0.32
 	var max_velocity := 28.0 if offroad else float(profile.top_speed)
 	if brake > 0.05:
 		if longitudinal > 0.3:
-			longitudinal = move_toward(longitudinal, 0.0, brake * 22.0 * dt)
+			longitudinal = move_toward(longitudinal, 0.0, brake * 22.0 * lerpf(1.0, .82, surface_wetness) * dt)
 		elif throttle < 0.05:
 			longitudinal = move_toward(longitudinal, -9.0, brake * 6.0 * dt)
 	elif throttle > 0.02:

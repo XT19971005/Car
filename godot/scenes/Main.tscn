@@ -1,6 +1,12 @@
-[gd_scene load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
-
+[gd_scene load_steps=6 format=3]
+[ext_resource type="Script" path="res://scripts/main.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/Weather.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/Showroom.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/RaceInterface.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/FrontEnd.tscn" id="5"]
 [node name="ApexCircuit" type="Node3D"]
-script = ExtResource("1_main")
+script = ExtResource("1")
+[node name="Weather" parent="." instance=ExtResource("2")]
+[node name="Showroom" parent="." instance=ExtResource("3")]
+[node name="RaceInterface" parent="." instance=ExtResource("4")]
+[node name="FrontEnd" parent="RaceInterface/Root" instance=ExtResource("5")]

@@ -1,0 +1,63 @@
+[gd_scene load_steps=9 format=3]
+[ext_resource type="Script" path="res://scripts/weather_controller.gd" id="1"]
+[ext_resource type="Shader" path="res://assets/materials/racing_sky.gdshader" id="2"]
+[sub_resource type="ShaderMaterial" id="SkyMaterial"]
+shader = ExtResource("2")
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMaterial")
+radiance_size = 3
+[sub_resource type="Environment" id="Environment"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 2
+ambient_light_color = Color(0.43, 0.54, 0.69, 1)
+ambient_light_energy = 0.38
+reflected_light_source = 2
+tonemap_mode = 3
+tonemap_exposure = 0.9
+ssao_enabled = true
+ssao_radius = 1.0
+ssao_intensity = 1.8
+fog_enabled = true
+fog_light_color = Color(0.65, 0.73, 0.8, 1)
+fog_density = 0.00005
+fog_sky_affect = 0.12
+[sub_resource type="ParticleProcessMaterial" id="RainProcess"]
+emission_shape = 3
+emission_box_extents = Vector3(13, 2, 13)
+direction = Vector3(-0.15, -1, 0)
+spread = 3.0
+initial_velocity_min = 12.0
+initial_velocity_max = 18.0
+gravity = Vector3(0, -15, 0)
+[sub_resource type="StandardMaterial3D" id="RainMaterial"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.70, 0.80, 0.9, 0.24)
+billboard_mode = 1
+disable_receive_shadows = true
+[sub_resource type="QuadMesh" id="RainMesh"]
+size = Vector2(0.013, 0.36)
+material = SubResource("RainMaterial")
+[node name="Weather" type="Node3D"]
+script = ExtResource("1")
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment")
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-32, -42, 0)
+light_color = Color(1, 0.944, 0.82, 1)
+light_energy = 1.25
+light_angular_distance = 1.2
+shadow_enabled = true
+directional_shadow_max_distance = 230.0
+directional_shadow_mode = 2
+shadow_blur = 1.4
+[node name="Rain" type="GPUParticles3D" parent="."]
+emitting = false
+amount = 2200
+lifetime = 1.15
+preprocess = 1.15
+visibility_aabb = AABB(-18, -25, -18, 36, 40, 36)
+local_coords = false
+process_material = SubResource("RainProcess")
+draw_pass_1 = SubResource("RainMesh")

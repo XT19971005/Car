@@ -6,9 +6,9 @@ ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'godot/assets/cars'
 OUT.mkdir(parents=True,exist_ok=True)
 variant = next((a.split('=')[1] for a in sys.argv if a.startswith('--variant=')), 'v8')
-spec = {'v8': {'asset':'VEH_V8_Endurance_GT','length':4.746,'width':2.049,'height':1.238,'wheelbase':2.630,'color':(.035,.20,.16)},
-        'r6': {'asset':'VEH_R6_Heritage_GT','length':4.619,'width':2.050,'height':1.30,'wheelbase':2.507,'color':(.68,.54,.27)},
-        'v6': {'asset':'VEH_V6_Apex_GT','length':4.565,'width':2.050,'height':1.25,'wheelbase':2.660,'color':(.55,.045,.04)}}[variant]
+spec = {'v8': {'asset':'VEH_V8_Muscle_GT','length':4.746,'width':2.049,'height':1.238,'wheelbase':2.630,'color':(.035,.20,.16)},
+        'r6': {'asset':'VEH_Rally_Hatch','length':4.10,'width':1.86,'height':1.48,'wheelbase':2.55,'color':(.68,.54,.27)},
+        'v6': {'asset':'VEH_Apex_Prototype','length':4.85,'width':2.04,'height':1.08,'wheelbase':2.85,'color':(.55,.045,.04)}}[variant]
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete(use_global=False)
 
@@ -51,13 +51,13 @@ def mesh(name,verts,faces,m):
 rings=[(-2.3,.83,.43,.72),(-1.95,1.0,.38,.87),(-1.25,1.02,.38,.92),
        (-.7,.95,.39,.83),(.65,.99,.4,.89),(1.35,1.04,.41,1.0),(2.15,.96,.45,.96),(2.3,.89,.5,.86)]
 if variant == 'r6':
-    rings=[(-2.3,.76,.4,.65),(-1.95,.94,.35,.82),(-1.25,1.025,.37,.94),(-.7,.94,.39,.82),(.65,.99,.40,.94),(1.35,1.025,.40,1.05),(2.15,.96,.41,.92),(2.3,.80,.45,.83)]
+    rings=[(-2.3,.82,.30,.88),(-1.85,.99,.30,1.01),(-1.1,1.04,.31,1.05),(-.65,.97,.31,1.02),(.75,1.0,.31,1.08),(1.45,1.05,.33,1.13),(2.15,.99,.34,1.09),(2.30,.96,.38,1.02)]
 elif variant == 'v6':
-    rings=[(-2.3,.86,.36,.58),(-1.95,1.0,.33,.73),(-1.25,1.025,.35,.83),(-.7,.93,.36,.83),(.65,.92,.38,.91),(1.35,1.025,.39,1.01),(2.15,.98,.42,.93),(2.3,.93,.45,.88)]
+    rings=[(-2.3,.67,.26,.40),(-1.95,.99,.27,.57),(-1.35,1.04,.28,.87),(-.65,.99,.28,.76),(.5,.99,.28,.80),(1.40,1.04,.28,.85),(2.15,1.02,.30,.73),(2.3,.93,.34,.60)]
 verts=[]
 for y,w,bottom,top in rings:
-    verts += [(-w*.88,y,bottom),(-w,y,bottom+.14),(-w,y,top-.1),(-w*.84,y,top),
-              (w*.84,y,top),(w,y,top-.1),(w,y,bottom+.14),(w*.88,y,bottom)]
+    verts += [(-w*.88,y,bottom),(-w,y,bottom+.14),(-w,y,top-.1),(-w*.98,y,top),
+              (w*.98,y,top),(w,y,top-.1),(w,y,bottom+.14),(w*.88,y,bottom)]
 faces=[]
 for j in range(len(rings)-1):
     for i in range(8): faces.append((j*8+i,j*8+(i+1)%8,(j+1)*8+(i+1)%8,(j+1)*8+i))
@@ -66,18 +66,22 @@ mesh('GT_sculpted_body',verts,faces,paint)
 # Glasshouse: long sloping windscreen, compact roof, fastback rear.
 v=[(-.79,-.85,.9),(.79,-.85,.9),(-.65,-.22,1.43),(.65,-.22,1.43),
    (-.65,.65,1.43),(.65,.65,1.43),(-.83,1.4,.98),(.83,1.4,.98)]
+if variant == 'r6':
+    v=[(-.81,-.86,1.04),(.81,-.86,1.04),(-.70,-.42,1.71),(.70,-.42,1.71),(-.70,1.32,1.71),(.70,1.32,1.71),(-.83,1.88,1.12),(.83,1.88,1.12)]
+elif variant == 'v6':
+    v=[(-.62,-1.12,.77),(.62,-1.12,.77),(-.49,-.32,1.28),(.49,-.32,1.28),(-.49,.35,1.28),(.49,.35,1.28),(-.65,1.23,.84),(.65,1.23,.84)]
 mesh('Glasshouse',v,[(0,1,3,2),(2,3,5,4),(4,5,7,6),(0,2,4,6),(1,7,5,3)],glass)
-box('Roof',(0,.23,1.46),(1.36,.96,.075),paint,.06)
+box('Roof',(0,(v[2][1]+v[4][1])/2,v[2][2]+.02),(abs(v[2][0])*2+.06,v[4][1]-v[2][1]+.06,.06),paint,.045)
 def rod(name,a,b,width,m):
     a,b=Vector(a),Vector(b)
     o=box(name,(a+b)/2,(width,width,(b-a).length),m,.01)
     o.rotation_euler=(b-a).to_track_quat('Z','Y').to_euler()
     return o
 for side in [-1,1]:
-    rod('A_pillar',(side*.79,-.85,.9),(side*.65,-.22,1.44),.065,paint)
-    rod('C_pillar',(side*.65,.66,1.43),(side*.83,1.4,.98),.12,paint)
-    rod('B_pillar',(side*.74,.43,.94),(side*.66,.43,1.43),.065,dark)
-    box('Side_skirt',(side*1.015,0,.37),(.12,3.85,.14),dark)
+    rod('A_pillar',(side*abs(v[0][0]),v[0][1],v[0][2]),(side*abs(v[2][0]),v[2][1],v[2][2]),.065,paint)
+    rod('C_pillar',(side*abs(v[4][0]),v[4][1],v[4][2]),(side*abs(v[6][0]),v[6][1],v[6][2]),.10,paint)
+    rod('B_pillar',(side*.75,.40,.94),(side*abs(v[2][0]),.40,v[2][2]),.055,dark)
+    box('Side_skirt',(side*1.015,0,.37),(.12,1.80,.14),dark)
     box('Door_number_panel',(side*.996,.05,.69),(.023,.66,.36),lightpaint,.015)
     box('Mirror_arm',(side*.9,-.59,1.09),(.30,.065,.07),dark,.02)
     box('Mirror',(side*1.09,-.59,1.12),(.22,.30,.13),paint,.05)
@@ -100,7 +104,7 @@ for x in [-.19,.19]:
     for j in range(3):
         ya,_,_,za=rings[j];yb,_,_,zb=rings[j+1]
         mesh('Hood_stripe',[(x-.09,ya,za+.007),(x+.09,ya,za+.007),(x+.09,yb,zb+.007),(x-.09,yb,zb+.007)],[(0,1,2,3)],lightpaint)
-    box('Roof_stripe',(x,.23,1.503),(.18,.84,.005),lightpaint,0)
+    box('Roof_stripe',(x,(v[2][1]+v[4][1])/2,v[2][2]+.054),(.18,v[4][1]-v[2][1],.005),lightpaint,0)
 for x in [-.55,.55]:
     for y in [-1.6,-1.45,-1.30]:box('Hood_vent',(x,y,.938),(.27,.055,.015),dark,.01)
 
@@ -129,12 +133,23 @@ if variant == 'r6':
     for side in [-1,1]:
         bpy.ops.mesh.primitive_uv_sphere_add(segments=16,ring_count=8,location=(side*.68,-1.97,.88))
         o=bpy.context.object;o.name='Round_endurance_headlight';o.scale=(.20,.17,.10);o.data.materials.append(lamp)
-    for y in [1.5,1.65,1.8,1.95]:box('Rear_engine_grille',(0,y,1.026),(1.15,.035,.025),dark,.008)
+    for x in [-.54,-.18,.18,.54]:
+        bpy.ops.mesh.primitive_cylinder_add(vertices=16,radius=.14,depth=.12,location=(x,-2.38,.78),rotation=(math.pi/2,0,0))
+        bpy.context.object.name='Rally_spotlight';bpy.context.object.data.materials.append(lamp)
+    box('Hatch_roof_spoiler',(0,1.58,1.71),(1.67,.40,.075),paint,.035)
+    box('Roof_air_vent',(0,.15,1.81),(.50,.48,.11),dark,.025)
+    for side in [-1,1]:
+        box('Rally_mudflap',(side*.94,1.77,.28),(.28,.045,.40),dark,.005)
+        box('Vertical_tail_lamp',(side*.81,2.32,.88),(.14,.045,.35),red,.015)
 elif variant == 'v6':
     for side in [-1,1]:
         mesh('Side_air_scoop',[(side*.98,.35,.85),(side*1.07,1.15,.95),(side*1.07,1.2,.50),(side*.98,.48,.50)],[(0,1,2,3)],dark)
         box('Rear_buttress',(side*.56,1.16,1.11),(.17,.85,.15),paint,.06)
-    box('Rear_light_bar',(0,2.30,.81),(1.6,.025,.045),red,.01)
+    box('Rear_light_bar',(0,2.30,.68),(1.6,.025,.045),red,.01)
+    mesh('Prototype_dorsal_fin',[(0,.43,1.26),(0,2.03,1.14),(0,2.10,.78),(0,.6,.84)],[(0,1,2,3)],paint)
+    for side in [-1,1]:
+        box('Front_fender_aero',(side*.91,-1.34,.77),(.31,1.0,.12),paint,.06)
+        box('Prototype_LED_blade',(side*.86,-1.85,.65),(.08,.42,.025),lamp,.009)
 else:
     for x in [i*.09-.63 for i in range(15)]:box('V8_vertical_grille',(x,-2.327,.59),(.021,.025,.22),alloy,.003)
     for side in [-1,1]:
@@ -170,7 +185,37 @@ box('Dash_screen',(.36,-.545,1.075),(.37,.035,.16),dark,.016)
 for name,pos in [('cockpit_camera',(.36,.10,1.225)),('dash_display',(.36,-.518,1.075)),('mirror_display',(0,-.65,1.30))]:
     bpy.ops.object.empty_add(location=pos);bpy.context.object.name=name
 
-# Normalize length/width to published GT-class dimensions; preserve axle spacing.
+if variant == 'r6':
+    for o in list(bpy.context.scene.objects):
+        if o.name.startswith(('Rear_wing','Wing_mount','Wing_endplate','Round_endurance_headlight','Headlight')):bpy.data.objects.remove(o,do_unlink=True)
+if variant == 'v6':
+    for o in list(bpy.context.scene.objects):
+        if o.name.startswith('Rollcage'):bpy.data.objects.remove(o,do_unlink=True)
+    for side in [-1,1]:rod('Canopy_support',(side*.48,-.31,1.25),(side*.48,.36,1.25),.04,dark)
+if variant == 'v6':
+    for o in list(bpy.context.scene.objects):
+        if o.name.startswith(('Hood_vent','Hood_stripe','Front_fender_aero','Prototype_LED_blade','B_pillar')):bpy.data.objects.remove(o,do_unlink=True)
+        elif o.name.startswith('Headlight'):o.location.z=.49;o.location.y=-2.19
+    for x in [-.16,.16]:
+        for j in range(3):
+            ya,_,_,za=rings[j];yb,_,_,zb=rings[j+1]
+            mesh('Prototype_nose_livery',[(x-.065,ya,za+.008),(x+.065,ya,za+.008),(x+.065,yb,zb+.008),(x-.065,yb,zb+.008)],[(0,1,2,3)],lightpaint)
+    for o in list(bpy.context.scene.objects):
+        if o.parent:continue
+        if o.name.startswith(('Dashboard','Dash_screen','dash_display','Centre_console','Door_liner','steering_wheel')):
+            o.location.x*=.77;o.scale.x*=.77;o.location.z-=.13
+        elif o.name.startswith(('Seat_back','Harness')):
+            o.location.y-=.25;o.location.z-=.17;o.scale.z*=.75
+        elif o.name.startswith(('Mirror','Mirror_arm')):o.location.z-=.16
+        elif o.name.startswith('B_pillar'):o.scale.x*=.8;o.location.x*=.8
+
+# Driver eyes stay below each roof, with clearance across the full camera frustum.
+if variant == 'v6':
+    bpy.data.objects['cockpit_camera'].location=(.27,-.10,1.075)
+elif variant == 'r6':
+    bpy.data.objects['cockpit_camera'].location=(.36,.10,1.40)
+    bpy.data.objects['steering_wheel'].location.z+=.19
+# Normalize each original design to its metre dimensions; preserve axle spacing.
 bpy.context.view_layer.update()
 verts_world=[o.matrix_world@v.co for o in bpy.context.scene.objects if o.type=='MESH' for v in o.data.vertices]
 length=max(v.y for v in verts_world)-min(v.y for v in verts_world)
@@ -184,6 +229,20 @@ for o in list(bpy.context.scene.objects):
         o.location.y=(-1 if 'front' in o.name else 1)*spec['wheelbase']/2
     if o.name.startswith('Wheelarch'):
         o.location.y=(-1 if o.location.y<0 else 1)*spec['wheelbase']/2
+# Cut real wheel wells after the wheelbase is finalized; avoid tyres intersecting a solid body.
+bpy.context.view_layer.update()
+body=bpy.data.objects.get('GT_sculpted_body')
+for pivot in [o for o in bpy.context.scene.objects if o.name.startswith('wheel_')]:
+    center=pivot.matrix_world.translation.copy()
+    bpy.ops.mesh.primitive_cylinder_add(vertices=32,radius=.397,depth=.76,location=center,rotation=(0,math.pi/2,0))
+    cutter=bpy.context.object;cutter.name='Wheelwell_cut_tool'
+    cutter.scale=(sz,sy,sx)
+    bpy.context.view_layer.objects.active=cutter
+    bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
+    mod=body.modifiers.new('Actual_wheel_well','BOOLEAN');mod.operation='DIFFERENCE';mod.solver='EXACT';mod.object=cutter
+    bpy.context.view_layer.objects.active=body
+    bpy.ops.object.modifier_apply(modifier=mod.name)
+    bpy.data.objects.remove(cutter,do_unlink=True)
 # Pivot positions determine runtime camera and live dashboard placement.
 bpy.context.view_layer.update()
 metadata={name:list(bpy.data.objects[name].location) for name in ['cockpit_camera','dash_display','mirror_display']}

@@ -1,0 +1,225 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/front_end.gd" id="1"]
+[sub_resource type="SystemFont" id="Font"]
+font_names = PackedStringArray("Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC")
+[sub_resource type="StyleBoxFlat" id="Button"]
+bg_color = Color(0.065, 0.09, 0.11, 0.92)
+border_width_bottom = 1
+border_color = Color(0.3, 0.36, 0.38, 1)
+content_margin_left = 20.0
+content_margin_right = 20.0
+content_margin_top = 12.0
+content_margin_bottom = 12.0
+[sub_resource type="StyleBoxFlat" id="Hover"]
+bg_color = Color(0.60, 0.055, 0.075, 0.97)
+border_width_top = 4
+border_color = Color(0.95, 0.16, 0.20, 1)
+content_margin_left = 20.0
+content_margin_right = 20.0
+content_margin_top = 12.0
+content_margin_bottom = 12.0
+[sub_resource type="Theme" id="Theme"]
+default_font = SubResource("Font")
+default_font_size = 20
+Button/styles/normal = SubResource("Button")
+Button/styles/hover = SubResource("Hover")
+Button/styles/focus = SubResource("Hover")
+Button/styles/pressed = SubResource("Hover")
+[sub_resource type="Gradient" id="Gradient"]
+colors = PackedColorArray(0.016, 0.026, 0.035, 0.96, 0.016, 0.026, 0.035, 0)
+
+[node name="FrontEnd" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme")
+script = ExtResource("1")
+
+[node name="LeftShade" type="ColorRect" parent="."]
+layout_mode = 1
+anchor_right = 0.37
+anchor_bottom = 1.0
+color = Color(0.016, 0.026, 0.035, 0.93)
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchor_right = 0.35
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_bottom = 24
+
+[node name="Stack" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Eyebrow" type="Label" parent="Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.16, 0.20, 1)
+theme_override_font_sizes/font_size = 13
+text = "DRIVER HEADQUARTERS"
+
+[node name="Title" type="Label" parent="Margin/Stack"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 44
+text = "APEX\nCIRCUIT"
+
+[node name="Subtitle" type="Label" parent="Margin/Stack"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.67, 0.75, 0.77, 1)
+text = "属于你的下一圈。"
+
+[node name="Spacer" type="Control" parent="Margin/Stack"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SettingsPanel" type="VBoxContainer" parent="Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="VolumeTitle" type="Label" parent="Margin/Stack/SettingsPanel"]
+layout_mode = 2
+text = "音量"
+[node name="Volume" type="HSlider" parent="Margin/Stack/SettingsPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.7
+[node name="Motion" type="CheckButton" parent="Margin/Stack/SettingsPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "减少镜头晃动"
+[node name="Fullscreen" type="CheckButton" parent="Margin/Stack/SettingsPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "全屏"
+
+[node name="GaragePanel" type="VBoxContainer" parent="Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+[node name="V8" type="Button" parent="Margin/Stack/GaragePanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "01   MUSCLE GT"
+[node name="Rally" type="Button" parent="Margin/Stack/GaragePanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "02   RALLY HATCH"
+[node name="Prototype" type="Button" parent="Margin/Stack/GaragePanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "03   PROTOTYPE"
+[node name="Continue" type="Button" parent="Margin/Stack/GaragePanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "驾驶这辆车    →"
+
+[node name="Back" type="Button" parent="Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "←  返回首页"
+
+[node name="Edition" type="Label" parent="Margin/Stack"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.5, 0.6, 0.64, 1)
+text = "09 CIRCUITS  /  03 MACHINES"
+
+[node name="CarInfo" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchor_left = 0.41
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -135.0
+offset_right = -35.0
+offset_bottom = -22.0
+grow_vertical = 0
+
+[node name="CarName" type="Label" parent="CarInfo"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "V8 MUSCLE GT"
+[node name="CarDetail" type="Label" parent="CarInfo"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.76, 0.8, 0.82, 1)
+text = "长车头 GT · 稳定与扭矩"
+
+[node name="TilesMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = -150.0
+offset_right = -32.0
+offset_bottom = -28.0
+grow_vertical = 0
+[node name="Navigation" type="HBoxContainer" parent="TilesMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Race" type="Button" parent="TilesMargin/Navigation"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "单人计时赛  →\nSINGLE PLAYER"
+alignment = 0
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 112)
+
+[node name="Garage" type="Button" parent="TilesMargin/Navigation"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "我的车库\nGARAGE"
+alignment = 0
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 112)
+
+[node name="Settings" type="Button" parent="TilesMargin/Navigation"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "游戏设置\nOPTIONS"
+alignment = 0
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 112)
+
+[node name="Quit" type="Button" parent="TilesMargin/Navigation"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "退出游戏\nEXIT"
+alignment = 0
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 112)
+
+
+[node name="TopNavigation" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchor_left = 0.54
+anchor_right = 1.0
+offset_top = 28.0
+offset_right = -32.0
+alignment = 2
+[node name="HomeTab" type="Button" parent="TopNavigation"]
+layout_mode = 2
+text = "首页"
+[node name="GarageTab" type="Button" parent="TopNavigation"]
+layout_mode = 2
+text = "车库"
+[node name="OptionsTab" type="Button" parent="TopNavigation"]
+layout_mode = 2
+text = "设置"

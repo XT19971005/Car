@@ -8,8 +8,9 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 DATA=ROOT/'art/reference_data'
 geo=json.loads((DATA/'f1-circuits.geojson').read_text(encoding='utf-8-sig'))
+geo['features']+=json.loads((DATA/'extra-circuits.geojson').read_text(encoding='utf-8-sig'))['features']
 tracks={}
-for key,ident,name,region,width in [('monza','it-1922','蒙扎','意大利 · 蒙扎公园',12),('spa','be-1925','斯帕','比利时 · 阿登森林',14),('silverstone','gb-1948','银石','英国 · 北安普敦郡',15)]:
+for key,ident,name,region,width in [('monza','it-1922','蒙扎','意大利 · 蒙扎公园',12),('spa','be-1925','斯帕','比利时 · 阿登森林',14),('silverstone','gb-1948','银石','英国 · 北安普敦郡',15),('nurburgring','de-1927','纽博格林 GP','德国 · 艾费尔山区',13),('suzuka','jp-1962','铃鹿','日本 · 三重县',13),('imola','it-1953','伊莫拉','意大利 · 艾米利亚',12),('redbull','at-1969','红牛环','奥地利 · 施皮尔贝格',13),('bathurst','bathurst','巴瑟斯特','澳大利亚 · 全景山',11),('laguna','laguna','拉古纳·塞卡','美国 · 加利福尼亚',12)]:
     feature=next(f for f in geo['features'] if f['properties']['id']==ident)
     coords=feature['geometry']['coordinates'][:-1]
     elevations=json.loads((DATA/(key+'-elevation.json')).read_text(encoding='utf-8-sig'))['results'][:-1]
@@ -26,11 +27,11 @@ for key,ident,name,region,width in [('monza','it-1922','蒙扎','意大利 · �
     features=[]
     def nearest(p):
         return min(points,key=lambda q:(q[0]-p[0])**2+(q[2]-p[2])**2)
-    start_name={'monza':'Palazzina Box','spa':'Stand F1','silverstone':'Silverstone Wing'}[key]
+    start_name={'monza':'Palazzina Box','spa':'Stand F1','silverstone':'Silverstone Wing'}.get(key,'__none__')
     start_target=None
     for way in osm.findall('way'):
         tags={t.attrib['k']:t.attrib['v'] for t in way.findall('tag')}
-        kind='building' if 'building' in tags else 'forest' if tags.get('natural')=='wood' or tags.get('landuse')=='forest' else 'pitlane' if tags.get('raceway')=='pit_lane' else ''
+        kind='building' if 'building' in tags else 'forest' if tags.get('natural')=='wood' or tags.get('landuse')=='forest' else 'pitlane' if tags.get('raceway')=='pit_lane' or tags.get('name')=='Pit Lane' else 'water' if tags.get('natural')=='water' else 'barrier' if tags.get('barrier') in ['guard_rail','fence','wall'] else ''
         if not kind:continue
         polygon=[nodes[n.attrib['ref']] for n in way.findall('nd') if n.attrib['ref'] in nodes]
         if len(polygon)<3:continue
@@ -44,7 +45,7 @@ for key,ident,name,region,width in [('monza','it-1922','蒙扎','意大利 · �
         area=abs(sum(polygon[i][0]*polygon[(i+1)%len(polygon)][2]-polygon[(i+1)%len(polygon)][0]*polygon[i][2] for i in range(len(polygon))))/2
         fallback_height=8 if stand else min(7,max(2.5,math.sqrt(area)*.30))
         raised=tags.get('level')=='1' or tags.get('layer')=='1' or tags.get('bridge')=='yes'
-        features.append({'osm_id':way.attrib['id'],'kind':kind,'name':tags.get('name',''),'grandstand':stand,'height':height or fallback_height,'height_measured':bool(height),'min_height':float(tags.get('min_height',5.5 if raised else 0)),'points':polygon})
+        features.append({'osm_id':way.attrib['id'],'kind':kind,'name':tags.get('name',''),'grandstand':stand,'height':height or fallback_height,'height_measured':bool(height),'barrier_type':tags.get('barrier',''),'min_height':float(tags.get('min_height',5.5 if raised else 0)),'points':polygon})
     ways={w.attrib['id']:w for w in osm.findall('way')}
     for relation in osm.findall('relation'):
         tags={t.attrib['k']:t.attrib['v'] for t in relation.findall('tag')}
@@ -68,7 +69,7 @@ for key,ident,name,region,width in [('monza','it-1922','蒙扎','意大利 · �
         start_index=min(range(len(dense)),key=lambda i:(dense[i][0]-start_target[0])**2+(dense[i][2]-start_target[2])**2)
         dense=dense[start_index:]+dense[:start_index]
     length=sum(math.dist(p,points[(i+1)%len(points)]) for i,p in enumerate(points))
-    tracks[key]={'name':name,'region':region,'distance':f"{feature['properties']['length']/1000:.3f} KM",'corners':{'monza':'11 弯','spa':'19 弯','silverstone':'18 弯'}[key],
+    tracks[key]={'name':name,'region':region,'distance':f"{feature['properties']['length']/1000:.3f} KM",'corners':{'monza':'11 弯','spa':'19 弯','silverstone':'18 弯','nurburgring':'16 弯','suzuka':'18 弯','imola':'19 弯','redbull':'10 弯','bathurst':'23 弯','laguna':'11 弯'}[key],
         'nominal_width_m':width,'points':dense,'source_length_m':round(length,3),'published_length_m':feature['properties']['length'],
         'elevation_range_m':round(max(heights)-low,2),'source_origin_lat_lon':[lat,lon],
         'accuracy':'Geographic centreline + 30m SRTM terrain; nominal road width. Buildings are stylized approximations.'}

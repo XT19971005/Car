@@ -83,10 +83,11 @@ func _run() -> void:
 		car.drive(1.0 / 60, 0, 1, 0, false, false)
 	check(absf(car.speed) < fast - 8, "Brake materially reduces speed")
 	game.session.next_gate = 4
+	var nearest_before: Dictionary = game.track.sample(game.car.position)
 	game.reset_car()
 	check(not game.session.valid and game.car.speed == 0, "Reset stops car and invalidates current lap")
 	var restored: Dictionary = game.track.sample(game.car.position)
-	check(absf(float(restored.progress) - 3.0 / Session.GATES) < 0.002, "Reset returns to earned checkpoint")
+	check(game.car.position.distance_to(nearest_before.point + Vector3.UP * .14) < .01, "Reset projects to nearest road rather than checkpoint")
 	game.start_race()
 	check(game.session.valid and game.session.elapsed == 0 and not game.record_this_race, "Restart clears lap state")
 	for key: String in game.tracks:

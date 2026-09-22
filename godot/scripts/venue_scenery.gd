@@ -1,5 +1,6 @@
 extends "res://scripts/monza_scenery.gd"
 ## Metre-scale OSM venue footprints and SRTM terrain; stylized facade detail.
+var mapped_barriers := false
 var terrain_points: Array
 var columns: int
 var rows: int
@@ -27,6 +28,10 @@ func build(track: Node3D) -> void:
 		elif feature.kind == "building":
 			feature_polygons.append(poly)
 			_building(track, feature, poly)
+		elif feature.kind == "water":
+			_water(poly)
+		elif feature.kind == "barrier":
+			_mapped_barrier(track, feature, poly)
 		elif feature.kind == "pitlane":
 			_pit_lane(track, poly)
 	_forest(track)
@@ -210,13 +215,22 @@ func _extrude_footprint(poly: PackedVector2Array, base: float, height: float, co
 	instance.create_trimesh_collision()
 
 func _pit_lane(track: Node3D, poly: PackedVector2Array) -> void:
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for i in poly.size() - 1:
 		var a := Vector3(poly[i].x, 0, poly[i].y)
 		var b := Vector3(poly[i + 1].x, 0, poly[i + 1].y)
-		a.y = track.sample(a).point.y - .05
-		b.y = track.sample(b).point.y - .05
-		var center := (a + b) * .5
-		track._box(center, Vector3(7.0, .08, a.distance_to(b) + .15), Color("777c78"), atan2(b.x - a.x, b.z - a.z), true)
+		a.y = track.sample(a).point.y - .035
+		b.y = track.sample(b).point.y - .035
+		var right := Vector3(b.z-a.z, 0, a.x-b.x).normalized() * 3.5
+		for point in [a-right,b+right,b-right,a-right,a+right,b+right]: surface.add_vertex(point)
+	surface.generate_normals()
+	var mesh := MeshInstance3D.new()
+	mesh.name = "MappedPitLane"
+	mesh.mesh = surface.commit()
+	mesh.material_override = track.material(Color("434c50"))
+	add_child(mesh)
+	mesh.create_trimesh_collision()
 
 func _forest(track: Node3D) -> void:
 	for p: Array in terrain_points:
@@ -256,7 +270,7 @@ func _facilities(track: Node3D) -> void:
 		var p: Dictionary = track.at_progress(float(metre) / track.length)
 		var right := Vector3(-p.tangent.z, 0, p.tangent.x).normalized()
 		var yaw := atan2(p.tangent.x, p.tangent.z)
-		for side in [-1.0, 1.0]:
+		for side in ([] if mapped_barriers else [-1.0, 1.0]):
 			var loc: Vector3 = p.point + right * side * (track.half_width + 8)
 			if float(track.sample(loc).distance) < track.half_width + 4:
 				continue
@@ -271,3 +285,50 @@ func _facilities(track: Node3D) -> void:
 			var loc: Vector3 = p.point + right * (track.half_width + 12)
 			_place("ENV_Circuit_MarshalPost_01", loc, yaw)
 			_place("ENV_Circuit_TyreBarrier_3m", loc - right * 3, yaw)
+
+func _water(poly: PackedVector2Array) -> void:
+	var indices := Geometry2D.triangulate_polygon(poly)
+	if indices.is_empty(): return
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for index in indices:
+		var point := Vector3(poly[index].x, 0, poly[index].y)
+		point.y = ground_height(point) + .12
+		st.add_vertex(point)
+	st.generate_normals()
+	var instance := MeshInstance3D.new()
+	instance.name = "MappedWater"
+	instance.mesh = st.commit()
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color("3c6573")
+	material.metallic = .25
+	material.roughness = .18
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	instance.material_override = material
+	add_child(instance)
+
+func _mapped_barrier(track: Node3D, feature: Dictionary, poly: PackedVector2Array) -> void:
+	var body := StaticBody3D.new()
+	body.name = "MappedBarrier_" + str(feature.osm_id)
+	add_child(body)
+	for i in poly.size() - 1:
+		var a := Vector3(poly[i].x, 0, poly[i].y)
+		var b := Vector3(poly[i+1].x, 0, poly[i+1].y)
+		var distance := a.distance_to(b)
+		var count := maxi(1, ceili(distance / 8))
+		var yaw := atan2(b.x-a.x, b.z-a.z)
+		for section in count:
+			var p := a.lerp(b, (section + .5) / count)
+			var nearest: Dictionary = track.sample(p)
+			if nearest.distance < track.half_width + 2 or nearest.distance > 170: continue
+			p.y = nearest.point.y if nearest.distance < 28 else ground_height(p)
+			var asset := "ENV_Circuit_SafetyFence_8m" if feature.barrier_type == "fence" else "ENV_Circuit_Guardrail_8m"
+			_place(asset, p, yaw, Vector3(1, 1, distance / count / 8))
+			var collider := CollisionShape3D.new()
+			var shape := BoxShape3D.new()
+			shape.size = Vector3(.20, 1.0, distance / count)
+			collider.shape = shape
+			collider.position = p + Vector3.UP * .50
+			collider.rotation.y = yaw
+			body.add_child(collider)
+			mapped_barriers = true

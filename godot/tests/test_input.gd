@@ -20,6 +20,10 @@ func _run() -> void:
 	root.add_child(game)
 	for i in 5:
 		await process_frame
+	check(game.front.visible and not game.ui.menu.visible, "Boot shows main menu")
+	await key(KEY_ENTER, true)
+	await key(KEY_ENTER, false)
+	check(game.ui.menu.visible and not game.front.visible, "Main menu enters race setup")
 	game.ui.start_button.grab_focus()
 	await key(KEY_ENTER, true)
 	await key(KEY_ENTER, false)
@@ -55,7 +59,7 @@ func _run() -> void:
 	check(game.state == game.State.RACING, "Escape resumes")
 	await key(KEY_R, true)
 	await key(KEY_R, false)
-	check(not game.session.valid and absf(game.car.speed) < 1, "R returns to earned checkpoint and invalidates lap")
+	check(not game.session.valid and absf(game.car.speed) < 1, "R returns to nearest road and invalidates lap")
 	game.queue_free()
 	await process_frame
 	print("INPUT COMPLETE: %d failures" % failures)

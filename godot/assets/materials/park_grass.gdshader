@@ -1,5 +1,7 @@
 shader_type spatial;
 render_mode cull_disabled;
+uniform vec3 low_color : source_color = vec3(.095,.16,.04);
+uniform vec3 high_color : source_color = vec3(.24,.30,.095);
 varying vec3 world_position;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
 float noise(vec2 p) {
@@ -9,7 +11,7 @@ float noise(vec2 p) {
 void vertex() {world_position=(MODEL_MATRIX * vec4(VERTEX,1.0)).xyz;}
 void fragment() {
  float patches=noise(world_position.xz*.045)*.75+noise(world_position.xz*.18)*.25;
- vec3 grass=mix(vec3(.095,.16,.04),vec3(.24,.30,.095),patches);
+ vec3 grass=mix(low_color,high_color,patches);
  float fine=noise(world_position.xz*9.0);
  ALBEDO=grass*(.94+fine*.12);
  ROUGHNESS=1.0;

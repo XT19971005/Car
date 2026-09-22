@@ -39,6 +39,11 @@ var preferences := ConfigFile.new()
 var test_mode := false
 var record_this_race := false
 var gate_marker: Node3D
+var front: Control
+var showroom: Node3D
+var showroom_car: Node3D
+var weather: Node
+var weather_mode := "clear"
 
 func _ready() -> void:
 	test_mode = "--test-mode" in OS.get_cmdline_user_args()
@@ -55,15 +60,16 @@ func _ready() -> void:
 	camera.far = 3500
 	add_child(camera)
 	camera.current = true
-	ui = Interface.new()
-	add_child(ui)
+	ui = $RaceInterface
 	ui.populate_tracks(tracks)
 	ui.start_requested.connect(start_race)
+	ui.weather_selected.connect(_set_weather)
+	ui.find_child("WeatherChoice", true, false).select(["clear", "overcast", "rain"].find(weather_mode))
 	ui.restart_requested.connect(start_race)
 	ui.track_selected.connect(select_track)
 	ui.pause_requested.connect(pause_race)
 	ui.resume_requested.connect(resume_race)
-	ui.menu_requested.connect(show_menu)
+	ui.menu_requested.connect(show_home)
 	ui.camera_requested.connect(switch_camera)
 	ui.volume_changed.connect(_set_volume)
 	ui.fullscreen_changed.connect(_set_fullscreen)
@@ -83,7 +89,8 @@ func _ready() -> void:
 	add_child(audio)
 	_build_rear_view()
 	select_track(selected_track)
-	show_menu()
+	_build_front_end()
+	show_home()
 	get_tree().auto_accept_quit = false
 
 func _configure_input() -> void:
@@ -106,40 +113,8 @@ func _configure_input() -> void:
 		InputMap.action_add_event(binding[0], event)
 
 func _build_environment() -> void:
-	var world := WorldEnvironment.new()
-	var environment := Environment.new()
-	var sky := Sky.new()
-	var sky_material := ProceduralSkyMaterial.new()
-	sky_material.sky_top_color = Color("6199c4")
-	sky_material.sky_horizon_color = Color("b6d1db")
-	sky_material.ground_horizon_color = Color("a1afa3")
-	sky_material.ground_bottom_color = Color("354f4b")
-	sky.sky_material = sky_material
-	environment.background_mode = Environment.BG_SKY
-	environment.sky = sky
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("b4cbd1")
-	environment.ambient_light_energy = 0.35
-	environment.fog_enabled = true
-	environment.fog_light_color = Color("bed1c9")
-	environment.fog_density = 0.00035
-	environment.tonemap_mode = Environment.TONE_MAPPER_ACES
-	environment.tonemap_exposure = 0.85
-	environment.ssao_enabled = true
-	environment.ssao_radius = 1.3
-	environment.ssao_intensity = 1.5
-	world.environment = environment
-	add_child(world)
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-38, -48, 0)
-	sun.light_color = Color("fff5df")
-	sun.light_energy = 1.0
-	sun.light_angular_distance = 1.2
-	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 220
-	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
-	sun.shadow_blur = 1.5
-	add_child(sun)
+	weather = $Weather
+	weather.set_weather(weather_mode)
 
 func select_track(key: String) -> void:
 	if not tracks.has(key):
@@ -148,17 +123,26 @@ func select_track(key: String) -> void:
 	if track:
 		remove_child(track)
 		track.queue_free()
-	track = Track.new()
+	track = load("res://scenes/circuits/" + key + ".tscn").instantiate()
 	add_child(track)
-	track.build(tracks[key].points, key, tracks[key])
 	_build_gate_marker()
 	car.reset_at(track.points[0], track.tangent(0))
 	last_sample = track.sample(car.position)
 	ui.select_track(key, tracks[key], track, best_time())
 	_update_camera(1.0, true)
 
+func _record_key() -> String:
+	return selected_track + ":" + selected_vehicle + ":" + weather_mode
+
+func _set_weather(key: String) -> void:
+	if key not in ["clear", "overcast", "rain"]: return
+	weather_mode = key
+	weather.set_weather(key)
+	ui.select_track(selected_track, tracks[selected_track], track, best_time())
+	_save_preferences()
+
 func best_time() -> float:
-	return float(records.get(selected_track + ":" + selected_vehicle, 0.0))
+	return float(records.get(_record_key(), 0.0))
 
 func select_vehicle(key: String) -> void:
 	selected_vehicle = key
@@ -193,6 +177,11 @@ func _build_rear_view() -> void:
 	rear_display.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func start_race() -> void:
+	if front:
+		front.hide()
+	if showroom:
+		showroom.hide()
+	track.show()
 	if audio:
 		audio.play_cue(700, .10)
 	session.reset(ui.lap_choice.get_selected_id())
@@ -213,6 +202,11 @@ func start_race() -> void:
 	_update_hud()
 
 func show_menu() -> void:
+	if front:
+		front.hide()
+	if showroom:
+		showroom.hide()
+	track.show()
 	state = State.MENU
 	car.velocity = Vector3.ZERO
 	audio.active = false
@@ -243,19 +237,20 @@ func switch_camera() -> void:
 func reset_car() -> void:
 	if state != State.RACING:
 		return
-	# Reset to the last earned gate, never beyond a missed checkpoint.
-	var safe_progress := float(session.next_gate - 1) / Session.GATES
-	var safe: Dictionary = track.at_progress(safe_progress + 0.0004)
+	var safe: Dictionary = track.sample(car.position)
 	car.reset_at(safe.point, safe.tangent)
-	session.relocate(safe_progress + 0.0004)
+	session.relocate(float(safe.progress))
+	session.next_gate = clampi(floori(float(safe.progress) * Session.GATES) + 1, 1, Session.GATES)
 	offroad_time = 0.0
-	message = "已返回检查点 · 本圈为练习圈"
+	message = "已返回最近路面 · 本圈为练习圈"
 	message_time = 3.0
 	_update_camera(1.0, true)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause_race"):
-		if state == State.PAUSED:
+		if state == State.MENU:
+			show_home()
+		elif state == State.PAUSED:
 			resume_race()
 		else:
 			pause_race()
@@ -272,7 +267,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		orbit = clampf(orbit - event.relative.x * 0.004, -1.5, 1.5)
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and not test_mode:
 		pause_race()
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
 		_save_preferences()
@@ -292,6 +287,7 @@ func _physics_process(dt: float) -> void:
 	elif state == State.RACING:
 		last_sample = track.sample(car.position)
 		var offroad: bool = float(last_sample.distance) > track.half_width + 0.85
+		car.surface_wetness = weather.rain_amount
 		car.drive(dt, Input.get_action_strength("accelerate"), Input.get_action_strength("brake"), Input.get_axis("left", "right"), Input.is_action_pressed("handbrake"), offroad)
 		last_sample = track.sample(car.position)
 		if float(last_sample.distance) > track.half_width + 1.7:
@@ -334,7 +330,7 @@ func _physics_process(dt: float) -> void:
 func _save_record() -> void:
 	var entry: Dictionary = session.laps.back()
 	if entry.valid and (best_time() <= 0 or float(entry.time) < best_time()):
-		records[selected_track + ":" + selected_vehicle] = entry.time
+		records[_record_key()] = entry.time
 		record_this_race = true
 		_save_preferences()
 
@@ -360,10 +356,20 @@ func _update_hud() -> void:
 	ui.update_hud(car, session, float(last_sample.progress), best_time(), status)
 
 func _process(dt: float) -> void:
+	if weather and camera:
+		weather.camera_position = camera.position
+		if audio: audio.rain_amount = weather.rain_amount if state in [State.COUNTDOWN, State.RACING] else 0.0
 	if car and camera and state != State.PAUSED:
 		_update_camera(dt)
 
 func _update_camera(dt: float, snap := false) -> void:
+	if front and front.visible:
+		showroom_car.rotation.y += dt * .12
+		camera.position = Vector3(10007.5, 2.6, 7.5)
+		camera.look_at(Vector3(10000.7, .6, 0))
+		camera.fov = 48
+		if rear_display: rear_display.hide()
+		return
 	camera_time += dt
 	if not mouse_drag:
 		orbit = lerpf(orbit, 0, 1 - exp(-dt * 5))
@@ -403,19 +409,22 @@ func _load_preferences() -> void:
 			selected_vehicle = "v8"
 		camera_mode = clampi(int(preferences.get_value("settings", "camera", 2)), 0, 2)
 		reduced_motion = bool(preferences.get_value("settings", "reduced_motion", false))
-		var saved: Variant = preferences.get_value("records", "gt_v2", {})
+		weather_mode = str(preferences.get_value("settings", "weather", "clear"))
+		if weather_mode not in ["clear", "overcast", "rain"]: weather_mode = "clear"
+		var saved: Variant = preferences.get_value("records", "static_v3_weather", {})
 		if saved is Dictionary:
 			records = saved
 
 func _save_preferences() -> void:
 	if test_mode:
 		return
+	preferences.set_value("settings", "weather", weather_mode)
 	preferences.set_value("settings", "volume", volume)
 	preferences.set_value("settings", "fullscreen", fullscreen)
 	preferences.set_value("settings", "vehicle", selected_vehicle)
 	preferences.set_value("settings", "camera", camera_mode)
 	preferences.set_value("settings", "reduced_motion", reduced_motion)
-	preferences.set_value("records", "gt_v2", records)
+	preferences.set_value("records", "static_v3_weather", records)
 	var error := preferences.save("user://driver.cfg")
 	if error != OK:
 		push_warning("Could not save driver preferences: %s" % error_string(error))
@@ -436,3 +445,43 @@ func _build_gate_marker() -> void:
 	# Checkpoints remain logical; a racing circuit has no floating arcade gate props.
 	gate_marker = Node3D.new()
 	track.add_child(gate_marker)
+func _build_front_end() -> void:
+	showroom = $Showroom
+	showroom_car = showroom.get_node("CarDisplay")
+	front = $RaceInterface/Root/FrontEnd
+	front.race_requested.connect(show_menu)
+	front.car_selected.connect(_choose_showroom_car)
+	front.volume_changed.connect(func(value: float): _set_volume(value); ui.volume_slider.set_value_no_signal(value))
+	front.motion_changed.connect(func(value: bool): reduced_motion = value; ui.reduced_motion.set_pressed_no_signal(value))
+	front.fullscreen_changed.connect(func(value: bool): _set_fullscreen(value); ui.fullscreen_toggle.set_pressed_no_signal(value))
+	front.exit_requested.connect(func(): _save_preferences(); get_tree().quit())
+	front.get_node("Margin/Stack/SettingsPanel/Volume").set_value_no_signal(volume)
+	front.get_node("Margin/Stack/SettingsPanel/Motion").set_pressed_no_signal(reduced_motion)
+	front.get_node("Margin/Stack/SettingsPanel/Fullscreen").set_pressed_no_signal(fullscreen)
+	front.select_car(selected_vehicle)
+	ui.home_requested.connect(show_home)
+
+func _choose_showroom_car(key: String) -> void:
+	select_vehicle(key)
+	for child in showroom_car.get_children():
+		showroom_car.remove_child(child)
+		child.queue_free()
+	var model = load("res://assets/cars/" + str(car.profile.asset) + ".glb").instantiate()
+	showroom_car.add_child(model)
+	showroom_car.rotation.y = -.4
+	for i in ui.vehicle_choice.item_count:
+		if ui.vehicle_choice.get_item_metadata(i) == key: ui.vehicle_choice.select(i)
+
+func show_home() -> void:
+	state = State.MENU
+	car.velocity = Vector3.ZERO
+	audio.active = false
+	ui.menu.hide()
+	ui.hud.hide()
+	ui.modal.hide()
+	track.hide()
+	showroom.show()
+	front.show()
+	front.open_page("home")
+	front.select_car(selected_vehicle)
+	_save_preferences()

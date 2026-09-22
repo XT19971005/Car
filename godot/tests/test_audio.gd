@@ -25,6 +25,8 @@ func _run() -> void:
 			engine.shift = clampf(1.0 - absf(seconds - 3.5) * 7, 0, 1)
 			engine.slip = 7 if seconds > 5 and seconds < 6 else 0
 			engine.rumble = 1 if seconds > 6 and seconds < 7 else 0
+			engine.rain_amount = .8 if seconds > 6.5 and seconds < 7.0 else 0
+			engine.cockpit = seconds > 4
 			engine.gain = 0 if seconds > 7.4 else 1
 			var frame: Vector2 = engine.synthesize_frame()
 			if not is_finite(frame.x) or not is_finite(frame.y):

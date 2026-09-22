@@ -14,9 +14,9 @@ function Invoke-RaceTest([string]$Script, [string]$Name, [string]$Success, [stri
 }
 $import = Start-Process -FilePath $GodotPath -ArgumentList @('--headless', '--editor', '--import', '--path', ('"' + $nativeProject + '"'), '--quit', '--log-file', ('"' + (Join-Path $outputDirectory 'import.log') + '"')) -WindowStyle Hidden -PassThru -Wait
 if ($import.ExitCode -ne 0) { throw 'Import failed' }
-Invoke-RaceTest 'res://tests/test_race.gd' 'regression' 'RESULT: 32 checks, 0 failures'
+Invoke-RaceTest 'res://tests/test_race.gd' 'regression' 'RESULT: 38 checks, 0 failures'
 $tracks = @('monza')
-if ($AllTracks) { $tracks = @('monza', 'spa', 'silverstone') }
+if ($AllTracks) { $tracks = @('monza', 'spa', 'silverstone', 'nurburgring', 'suzuka', 'imola', 'redbull', 'bathurst', 'laguna') }
 $cars = @('v8')
 if ($AllCars) { $cars = @('v8', 'r6', 'v6') }
 foreach ($track in $tracks) {
