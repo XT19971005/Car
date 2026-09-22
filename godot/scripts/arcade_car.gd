@@ -9,6 +9,8 @@ var throttle := 0.0
 var brake := 0.0
 var yaw_rate := 0.0
 var rpm := 950.0
+const RATIOS: Array[float] = [0.0, 3.10, 2.12, 1.55, 1.20, 0.98, 0.82]
+var automatic_gears := true
 var gear := 0
 var shift_timer := 0.0
 var chassis_collision: CollisionShape3D
@@ -22,7 +24,7 @@ var vehicle_key := "v8"
 var profile: Dictionary = preload("res://scripts/car_catalog.gd").CARS.v8
 var cockpit_anchor: Node3D
 var steering_wheel: Node3D
-var dashboard: Label3D
+var dashboard: Node3D
 var acceleration_feedback := 0.0
 var impact_feedback := 0.0
 var shift_feedback := 0.0
@@ -69,14 +71,7 @@ func configure_vehicle(key: String) -> void:
 	cockpit_anchor = model.find_child("cockpit_camera", true, false)
 	steering_wheel = model.find_child("steering_wheel", true, false)
 	var screen := model.find_child("dash_display", true, false) as Node3D
-	dashboard = Label3D.new()
-	dashboard.font_size = 40
-	dashboard.font = preload("res://assets/fonts/NotoSansSC-Regular.otf")
-	dashboard.pixel_size = .00075
-	dashboard.rotation.y = PI
-	dashboard.modulate = Color("9fffcf")
-	dashboard.outline_size = 0
-	dashboard.text = "空挡  000\n转速 0950"
+	dashboard = preload("res://scenes/CockpitDisplay.tscn").instantiate()
 	screen.add_child(dashboard)
 
 func reset_at(point: Vector3, direction: Vector3) -> void:
@@ -91,7 +86,7 @@ func reset_at(point: Vector3, direction: Vector3) -> void:
 	throttle = 0.0
 	brake = 0.0
 	rpm = 950.0
-	gear = 0
+	gear = 0 if automatic_gears else 1
 	shift_timer = 0.0
 	impact_feedback = 0.0
 	shift_feedback = 0.0
@@ -100,8 +95,20 @@ func reset_at(point: Vector3, direction: Vector3) -> void:
 		body_visual.rotation = Vector3.ZERO
 	reset_physics_interpolation()
 
+func shift_gear(direction: int) -> bool:
+	if shift_timer > 0: return false
+	var next := clampi(gear + direction, -1, 6)
+	if next == gear: return false
+	if next <= 0 and absf(speed) > 1.0: return false
+	if speed < -1.0: return false
+	if next > 0 and absf(speed) / 2.05 * 60.0 * RATIOS[next] * 3.4 > 7800: return false
+	gear = next
+	shift_timer = .18
+	shift_feedback = 1.0
+	return true
+
 func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool, offroad: bool) -> void:
-	steering = move_toward(steering, turn, dt * (4.5 if absf(turn) > 0.05 else 6.0))
+	steering = move_toward(steering, turn, dt * (3.8 if absf(turn) > 0.05 else 10.0))
 	throttle = move_toward(throttle, gas, dt * 2.8)
 	brake = move_toward(brake, stopping, dt * 6.0)
 	var forward := Vector3(sin(heading), 0, cos(heading))
@@ -113,29 +120,41 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 		grip *= 0.32
 	var max_velocity := 28.0 if offroad else float(profile.top_speed)
 	if brake > 0.05:
-		if longitudinal > 0.3:
+		if not automatic_gears:
+			longitudinal = move_toward(longitudinal, 0.0, brake * 22.0 * lerpf(1.0, .82, surface_wetness) * dt)
+		elif longitudinal > 0.3:
 			longitudinal = move_toward(longitudinal, 0.0, brake * 22.0 * lerpf(1.0, .82, surface_wetness) * dt)
 		elif throttle < 0.05:
 			longitudinal = move_toward(longitudinal, -9.0, brake * 6.0 * dt)
-	elif throttle > 0.02:
-		if longitudinal < -0.2:
+	elif throttle > 0.02 and (automatic_gears or gear != 0):
+		if not automatic_gears and gear == -1:
+			longitudinal = move_toward(longitudinal, -9.0, throttle * 6.0 * dt)
+		elif longitudinal < -0.2:
 			longitudinal = move_toward(longitudinal, 0.0, throttle * 18.0 * dt)
 		else:
-			longitudinal = move_toward(longitudinal, max_velocity, maxf(3.0, float(profile.acceleration) - longitudinal * 0.1) * throttle * dt)
+			var gear_limit := max_velocity if automatic_gears else 7800.0 * 2.05 / (60.0 * RATIOS[maxi(gear, 1)] * 3.4)
+			var drive_scale := 1.0 if automatic_gears else clampf(RATIOS[maxi(gear, 1)] / 2.12, .45, 1.12)
+			if shift_timer > 0: drive_scale *= .18
+			longitudinal = move_toward(longitudinal, minf(max_velocity, gear_limit), maxf(3.0, float(profile.acceleration) - longitudinal * 0.1) * throttle * drive_scale * dt)
 	else:
 		longitudinal = move_toward(longitudinal, 0.0, (0.7 + absf(longitudinal) * 0.025) * dt)
 	if offroad and absf(longitudinal) > max_velocity:
 		longitudinal = move_toward(longitudinal, signf(longitudinal) * max_velocity, dt * 12.0)
 	if handbrake:
 		longitudinal = move_toward(longitudinal, 0.0, dt * 9.0)
-	var steering_angle := lerpf(0.55, 0.045, clampf(absf(longitudinal) / TOP_SPEED, 0, 1))
+	var steering_angle := .55 / (1.0 + pow(absf(longitudinal) / 22.0, 2.0))
 	# Model forward is +Z; a driver's right turn rotates toward -X.
 	var desired_yaw := -steering * longitudinal / float(profile.wheelbase) * tan(steering_angle)
-	desired_yaw = clampf(desired_yaw, -1.5, 1.5)
-	yaw_rate = lerpf(yaw_rate, desired_yaw, 1.0 - exp(-dt * 7.0))
+	var yaw_limit := minf(1.5, grip * 1.65 * (1.0 - brake * .20) / maxf(absf(longitudinal), 3.0))
+	desired_yaw = clampf(desired_yaw, -yaw_limit, yaw_limit)
+	yaw_rate = lerpf(yaw_rate, desired_yaw, 1.0 - exp(-dt * (12.0 if not offroad else 6.0)))
 	heading += yaw_rate * dt
-	lateral *= exp(-grip * dt)
-	# Preserve inertia in world space while steering; tyre grip draws it back next step.
+	# Resolve tyre forces in the updated vehicle frame, then damp sideslip.
+	var momentum := forward * longitudinal + right * lateral
+	forward = Vector3(sin(heading), 0, cos(heading))
+	right = Vector3(forward.z, 0, -forward.x)
+	longitudinal = momentum.dot(forward)
+	lateral = momentum.dot(right) * exp(-grip * 2.0 * dt)
 	var vertical := velocity.y
 	velocity = forward * longitudinal + right * lateral
 	# Floor snapping handles grounded adhesion. Forcing gravity into a floor every
@@ -153,21 +172,22 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 	shift_timer = maxf(0, shift_timer - dt)
 	shift_feedback = move_toward(shift_feedback, 0, dt * 7)
 	var old_gear := gear
-	var ratio: Array[float] = [0.0, 3.10, 2.12, 1.55, 1.20, 0.98, 0.82]
-	if speed < -0.3:
-		gear = -1
-	elif absf(speed) < 0.4 and throttle < 0.05:
-		gear = 0
-	else:
-		gear = maxi(gear, 1)
-		var predicted := absf(speed) / 2.05 * 60.0 * ratio[gear] * 3.4
-		if shift_timer <= 0:
-			if predicted > 7200 and gear < 6:
-				gear += 1
-				shift_timer = 0.35
-			elif predicted < 2600 and gear > 1:
-				gear -= 1
-				shift_timer = 0.25
+	var ratio := RATIOS
+	if automatic_gears:
+		if speed < -0.3:
+			gear = -1
+		elif absf(speed) < 0.4 and throttle < 0.05:
+			gear = 0
+		else:
+			gear = maxi(gear, 1)
+			var predicted := absf(speed) / 2.05 * 60.0 * ratio[gear] * 3.4
+			if shift_timer <= 0:
+				if predicted > 7200 and gear < 6:
+					gear += 1
+					shift_timer = 0.35
+				elif predicted < 2600 and gear > 1:
+					gear -= 1
+					shift_timer = 0.25
 	var target_rpm := 950.0 + throttle * 1700.0 if gear <= 0 else maxf(1100.0, absf(speed) / 2.05 * 60 * ratio[gear] * 3.4)
 	rpm = lerpf(rpm, clampf(target_rpm, 950, 7900), 1.0 - exp(-dt * 12))
 	if old_gear != gear and old_gear > 0:
@@ -179,7 +199,7 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 	if is_on_floor():
 		floor_pitch = -atan2(is_on_floor_direction(forward), 1.0)
 	body_visual.rotation.x = lerp_angle(body_visual.rotation.x, floor_pitch - clampf(acceleration * 0.002, -0.045, 0.045), 1 - exp(-dt * 6))
-	body_visual.rotation.z = lerpf(body_visual.rotation.z, clampf(yaw_rate * speed * 0.002, -0.07, 0.07), 1 - exp(-dt * 6))
+	body_visual.rotation.z = lerpf(body_visual.rotation.z, clampf(yaw_rate * speed * 0.001, -0.035, 0.035), 1 - exp(-dt * 6))
 	wheel_roll += speed * dt / 0.34
 	for i in wheel_nodes.size():
 		wheel_nodes[i].rotation.x = wheel_rotations[i].x + wheel_roll
@@ -188,7 +208,7 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 	if steering_wheel:
 		steering_wheel.rotation.z = -steering * 1.8
 	if dashboard:
-		dashboard.text = "%s  %03d\n转速 %04d" % ["倒挡" if gear < 0 else "空挡" if gear == 0 else str(gear) + "挡", roundi(absf(speed) * 3.6), roundi(rpm)]
+		dashboard.update_readout(gear, speed, rpm)
 
 func is_on_floor_direction(forward: Vector3) -> float:
 	var normal := get_floor_normal()

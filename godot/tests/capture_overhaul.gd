@@ -29,6 +29,8 @@ func run() -> void:
 			game.car.drive(1.0/60, 0, 0, 0, false, false)
 		game._update_camera(1, true)
 		await shot("WEATHER_" + key)
+	game.pause_race()
+	await shot("PAUSE_Refined")
 	game.weather.set_weather("clear")
 	game.show_home()
 	DisplayServer.window_set_size(Vector2i(960, 540))

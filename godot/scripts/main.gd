@@ -18,6 +18,8 @@ var session := Session.new()
 var selected_track := "monza"
 var countdown := 3.0
 var go_timer := 0.0
+const CAMERA_NAMES := ["近追车", "远追车", "驾驶舱", "仪表台", "引擎盖", "保险杠", "头盔", "纯路面"]
+var automatic_gears := false
 var camera_mode := 2
 var selected_vehicle := "v8"
 var reduced_motion := false
@@ -53,6 +55,7 @@ func _ready() -> void:
 	_build_environment()
 	car = Car.new()
 	add_child(car)
+	car.automatic_gears = automatic_gears
 	car.configure_vehicle(selected_vehicle)
 	camera = Camera3D.new()
 	camera.fov = 65
@@ -94,7 +97,7 @@ func _ready() -> void:
 	get_tree().auto_accept_quit = false
 
 func _configure_input() -> void:
-	var keys := {"accelerate": [KEY_W, KEY_UP], "brake": [KEY_S, KEY_DOWN], "left": [KEY_A, KEY_LEFT], "right": [KEY_D, KEY_RIGHT], "handbrake": [KEY_SPACE], "reset_car": [KEY_R], "camera": [KEY_C], "pause_race": [KEY_ESCAPE]}
+	var keys := {"accelerate": [KEY_W, KEY_UP], "brake": [KEY_S, KEY_DOWN], "left": [KEY_A, KEY_LEFT], "right": [KEY_D, KEY_RIGHT], "handbrake": [KEY_SPACE], "reset_car": [KEY_R], "shift_down": [KEY_Q], "shift_up": [KEY_E], "transmission": [KEY_M], "camera": [KEY_C, KEY_F1], "pause_race": [KEY_ESCAPE]}
 	for action: String in keys:
 		if not InputMap.has_action(action):
 			InputMap.add_action(action, 0.15)
@@ -107,7 +110,7 @@ func _configure_input() -> void:
 		event.axis = binding[1]
 		event.axis_value = binding[2]
 		InputMap.action_add_event(binding[0], event)
-	for binding in [["handbrake", JOY_BUTTON_A], ["camera", JOY_BUTTON_Y], ["reset_car", JOY_BUTTON_BACK], ["pause_race", JOY_BUTTON_START]]:
+	for binding in [["shift_down", JOY_BUTTON_LEFT_SHOULDER], ["shift_up", JOY_BUTTON_RIGHT_SHOULDER], ["handbrake", JOY_BUTTON_A], ["camera", JOY_BUTTON_Y], ["reset_car", JOY_BUTTON_BACK], ["pause_race", JOY_BUTTON_START]]:
 		var event := InputEventJoypadButton.new()
 		event.button_index = binding[1]
 		InputMap.action_add_event(binding[0], event)
@@ -148,7 +151,8 @@ func select_vehicle(key: String) -> void:
 	selected_vehicle = key
 	car.configure_vehicle(key)
 	car.reset_at(track.points[0], track.tangent(0))
-	ui.vehicle_detail.text = "%s  /  长 %.2f 米 · 宽 %.2f 米" % [car.profile.description, car.profile.length, car.profile.width]
+	ui.vehicle_detail.text = "车长 %.2f 米    车宽 %.2f 米" % [car.profile.length, car.profile.width]
+	ui.find_child("VehiclePreview", true, false).texture = load("res://assets/ui/garage_%s.png" % key)
 	ui.select_track(selected_track, tracks[selected_track], track, best_time())
 	_update_camera(1, true)
 
@@ -230,9 +234,12 @@ func resume_race() -> void:
 	ui.show_race()
 
 func switch_camera() -> void:
-	camera_mode = (camera_mode + 1) % 3
+	camera_mode = (camera_mode + 1) % CAMERA_NAMES.size()
 	ui.cockpit_choice.set_pressed_no_signal(camera_mode == 2)
 	orbit = 0.0
+	message = "视角：" + CAMERA_NAMES[camera_mode]
+	message_time = 2.0
+	_save_preferences()
 	_update_camera(1.0, true)
 
 func reset_car() -> void:
@@ -258,6 +265,20 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	if state != State.RACING and state != State.COUNTDOWN:
 		return
+	if not event.is_echo() and state == State.RACING:
+		if event.is_action_pressed("shift_down") or event.is_action_pressed("shift_up"):
+			car.automatic_gears = false
+			automatic_gears = false
+			var shifted: bool = car.shift_gear(-1 if event.is_action_pressed("shift_down") else 1)
+			message = "手动换挡" if shifted else "当前无法换挡：转速或车速保护"
+			message_time = 1.3
+			_save_preferences()
+		if event.is_action_pressed("transmission"):
+			automatic_gears = not automatic_gears
+			car.automatic_gears = automatic_gears
+			message = "自动换挡" if automatic_gears else "手动换挡：Q 降挡 · E 升挡"
+			message_time = 2.0
+			_save_preferences()
 	if event.is_action_pressed("camera") and not event.is_echo():
 		switch_camera()
 	if event.is_action_pressed("reset_car") and not event.is_echo():
@@ -325,7 +346,7 @@ func _physics_process(dt: float) -> void:
 		audio.engine_type = selected_vehicle
 		audio.shift = car.shift_feedback
 		audio.impact = car.impact_feedback
-		audio.cockpit = camera_mode == 2
+		audio.cockpit = camera_mode in [2, 3, 6, 7]
 		audio.rumble = 1.0 if last_sample and float(last_sample.distance) > track.half_width - .25 else 0.0
 
 func _save_record() -> void:
@@ -371,27 +392,17 @@ func _update_camera(dt: float, snap := false) -> void:
 		camera.fov = 44
 		if rear_display: rear_display.hide()
 		return
-	camera_time += dt
 	if not mouse_drag:
-		orbit = lerpf(orbit, 0, 1 - exp(-dt * 5))
-	var blend := 1.0 if snap else 1 - exp(-dt * 10)
-	camera_yaw = lerp_angle(camera_yaw, car.heading, blend)
+		orbit = lerpf(orbit, 0, 1 - exp(-dt * 8))
+	# Fixed car-relative cameras: no speed zoom or world-position follow lag.
+	camera_yaw = car.heading
 	var basis_yaw := Basis(Vector3.UP, camera_yaw + orbit)
-	var offset := Vector3(0, 3.2, -7.5) if camera_mode == 0 else Vector3(0, 5.0, -12.0)
-	car.body_visual.visible = true
-	if camera_mode == 2:
-		camera.position = car.cockpit_anchor.global_position
-		var curb := 1.0 if last_sample and float(last_sample.distance) > track.half_width - .25 else .12
-		var feedback := 0.0 if reduced_motion else 1.0
-		camera.position.y += sin(camera_time * 31) * minf(absf(car.speed) / 60, 1.0) * .009 * curb * feedback
-		camera.position += car.global_basis.z * car.acceleration_feedback * .0008 * feedback
-		camera.look_at(camera.position + car.body_visual.global_basis.z * 50, Vector3.UP)
-		camera.rotation.z += (-car.yaw_rate * .012 + sin(camera_time * 42) * car.impact_feedback * .015) * feedback
-		camera.rotation.x += car.shift_feedback * .008 * feedback
-	else:
-		var desired: Vector3 = car.position + basis_yaw * offset
-		var candidate: Vector3 = desired if snap else camera.position.lerp(desired, blend)
-		# Keep the chase view on the vehicle side of walls, terrain and bridges.
+	car.body_visual.visible = camera_mode != 7
+	ui.speed_label.get_parent().get_parent().get_parent().visible = selected_vehicle == "r6" or camera_mode not in [2, 3, 6]
+	var onboard: bool = camera_mode in [2, 3, 6, 7]
+	if camera_mode < 2:
+		var offset := Vector3(0, 2.25, -6.7) if camera_mode == 0 else Vector3(0, 3.25, -9.5)
+		var candidate: Vector3 = car.position + basis_yaw * offset
 		var anchor := car.position + Vector3.UP
 		var query := PhysicsRayQueryParameters3D.create(anchor, candidate)
 		query.exclude = [car.get_rid()]
@@ -399,11 +410,21 @@ func _update_camera(dt: float, snap := false) -> void:
 		if not obstruction.is_empty():
 			candidate = obstruction.position + (anchor - candidate).normalized() * .28
 		camera.position = candidate
-		camera.look_at(car.position + Vector3.UP * 0.9 + Vector3(sin(camera_yaw), 0, cos(camera_yaw)) * 3.0)
-	camera.fov = 72 if camera_mode == 2 else 65 + minf(absf(car.speed) * .065, 5.0)
+		camera.look_at(car.position + Vector3.UP * .85 + basis_yaw.z * 2.0)
+	elif onboard:
+		camera.position = car.cockpit_anchor.global_position
+		if camera_mode in [3, 7]: camera.position += car.body_visual.global_basis.z * .10 + Vector3.UP * .035
+		if camera_mode == 6: camera.position += car.body_visual.global_basis.y * .025
+		camera.look_at(camera.position + car.body_visual.global_basis.z * 50, Vector3.UP)
+	else:
+		var bonnet_height := .87 if selected_vehicle == "v8" else 1.10 if selected_vehicle == "r6" else .88
+		var local := Vector3(0, bonnet_height, float(car.profile.length) * .27) if camera_mode == 4 else Vector3(0, .42, float(car.profile.length) * .5 + .08)
+		camera.position = car.to_global(local)
+		camera.look_at(camera.position + car.global_basis.z * 50, Vector3.UP)
+	camera.fov = 54.0 if onboard else 58.0
 	if rear_camera:
-		rear_display.visible = camera_mode == 2
-		rear_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if camera_mode == 2 and state in [State.COUNTDOWN, State.RACING] else SubViewport.UPDATE_DISABLED
+		rear_display.visible = onboard
+		rear_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if onboard and state in [State.COUNTDOWN, State.RACING] else SubViewport.UPDATE_DISABLED
 		rear_camera.position = car.to_global(Vector3(0, 1.2, -2.7))
 		rear_camera.look_at(car.to_global(Vector3(0, 1.15, -40)))
 
@@ -411,12 +432,13 @@ func _load_preferences() -> void:
 	if test_mode:
 		return
 	if preferences.load("user://driver.cfg") == OK:
+		automatic_gears = bool(preferences.get_value("settings", "automatic_gears", false))
 		volume = clampf(float(preferences.get_value("settings", "volume", 0.7)), 0, 1)
 		fullscreen = bool(preferences.get_value("settings", "fullscreen", false))
 		selected_vehicle = str(preferences.get_value("settings", "vehicle", "v8"))
 		if not preload("res://scripts/car_catalog.gd").CARS.has(selected_vehicle):
 			selected_vehicle = "v8"
-		camera_mode = clampi(int(preferences.get_value("settings", "camera", 2)), 0, 2)
+		camera_mode = clampi(int(preferences.get_value("settings", "camera", 2)), 0, CAMERA_NAMES.size() - 1)
 		reduced_motion = bool(preferences.get_value("settings", "reduced_motion", false))
 		weather_mode = str(preferences.get_value("settings", "weather", "clear"))
 		if weather_mode not in preload("res://scripts/weather_controller.gd").KEYS: weather_mode = "clear"
@@ -427,6 +449,7 @@ func _load_preferences() -> void:
 func _save_preferences() -> void:
 	if test_mode:
 		return
+	preferences.set_value("settings", "automatic_gears", automatic_gears)
 	preferences.set_value("settings", "weather", weather_mode)
 	preferences.set_value("settings", "volume", volume)
 	preferences.set_value("settings", "fullscreen", fullscreen)

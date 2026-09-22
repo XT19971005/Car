@@ -95,8 +95,8 @@ func button(parent: Node, text: String, action: Callable, primary := false) -> B
 	item.custom_minimum_size.y = 44
 	if primary:
 		item.add_theme_stylebox_override("normal", panel(ACCENT, 14))
-		item.add_theme_color_override("font_color", INK)
-		item.add_theme_color_override("font_focus_color", INK)
+		item.add_theme_color_override("font_color", Color.WHITE)
+		item.add_theme_color_override("font_focus_color", Color.WHITE)
 	item.pressed.connect(action)
 	parent.add_child(item)
 	return item
@@ -126,7 +126,7 @@ func _clear_modal() -> void:
 
 func show_pause() -> void:
 	_clear_modal()
-	label(modal_stack, "稍作休息", 32)
+	label(modal_stack, "暂停", 32)
 	label(modal_stack, "比赛计时已暂停", 18, MUTED)
 	resume_button = button(modal_stack, "继续比赛", func(): resume_requested.emit(), true)
 	button(modal_stack, "重新开始", func(): restart_requested.emit())
@@ -160,8 +160,10 @@ func show_race() -> void:
 		focused.release_focus()
 
 func update_hud(car: CharacterBody3D, session: RefCounted, progress: float, personal_best: float, status: String) -> void:
-	speed_label.text = "%03d" % int(absf(car.speed) * 3.6)
-	gear_label.text = "%s · 公里/时" % ("倒挡" if car.gear < 0 else ("空挡" if car.gear == 0 else str(car.gear) + " 挡"))
+	speed_label.text = str(int(absf(car.speed) * 3.6))
+	var gear_text := "倒" if car.gear < 0 else "空" if car.gear == 0 else str(car.gear)
+	root.find_child("GearLarge",true,false).text = gear_text
+	gear_label.text = "公里/时    ·    " + ("自动换挡" if car.automatic_gears else "手动换挡")
 	rpm_bar.value = car.rpm
 	lap_label.text = "计时赛   /   第 %d / %d 圈" % [session.lap, session.target_laps]
 	timer_label.text = Session.time_text(session.lap_time) if session.lap_time > 0 else "00:00.000"

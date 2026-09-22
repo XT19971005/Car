@@ -31,7 +31,8 @@ func select_car(key: String) -> void:
 	current_car = key
 	var data: Dictionary = CARS[key]
 	%CarName.text = data.name
-	%CarDetail.text = data.description + "\n极速 %.0f 公里/时  ·  车长 %.2f 米" % [float(data.top_speed) * 3.6, data.length]
+	%TopSpeed.text = "%.0f 公里/时" % (float(data.top_speed) * 3.6)
+	%CarLength.text = "%.2f 米" % data.length
 	car_selected.emit(key)
 	for pair in [[%V8, "v8"], [%Rally, "r6"], [%Prototype, "v6"]]:
 		pair[0].modulate = Color.WHITE
@@ -40,13 +41,13 @@ func select_car(key: String) -> void:
 func open_page(page: String) -> void:
 	for pair in [[$TopNavigation/HomeTab, "home"], [$TopNavigation/GarageTab, "garage"], [$TopNavigation/OptionsTab, "settings"]]:
 		pair[0].modulate = Color.WHITE if pair[1] == page else Color("82929e")
-	$Margin/Stack/Subtitle.text = {"home": "专注驾驶，突破下一圈。", "garage": "选择适合你的驾驶风格。", "settings": "找到舒服的驾驶状态。"}[page]
 	$TilesMargin.visible = page == "home"
 	$LeftShade.visible = page != "home"
 	$Margin/Stack/Edition.visible = page != "home"
 	$Margin/Stack/Title.text = "巅峰赛道" if page == "home" else "车库" if page == "garage" else "设置"
-	$CarInfo.offset_top = -230 if page == "home" else -135
-	$CarInfo.offset_bottom = -130 if page == "home" else -22
+	$CarInfo.visible = page == "garage"
+	$CarInfo.offset_top = -135
+	$CarInfo.offset_bottom = -22
 	%Navigation.visible = page == "home"
 	%SettingsPanel.visible = page == "settings"
 	%GaragePanel.visible = page == "garage"

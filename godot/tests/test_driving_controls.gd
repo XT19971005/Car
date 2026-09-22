@@ -1,0 +1,119 @@
+extends SceneTree
+var failures := 0
+var checks := 0
+func _initialize() -> void: run.call_deferred()
+func check(ok: bool, title: String) -> void:
+	checks += 1
+	if not ok:
+		failures += 1
+		push_error("CONTROL FAIL: " + title)
+	else: print("CONTROL PASS: " + title)
+func press(game: Node, code: Key) -> void:
+	var event := InputEventKey.new()
+	event.physical_keycode = code
+	event.pressed = true
+	game._unhandled_input(event)
+func run() -> void:
+	var game = load("res://scenes/Main.tscn").instantiate()
+	root.add_child(game)
+	game.set_process(false)
+	game.set_physics_process(false)
+	game.start_race()
+	game.state = game.State.RACING
+	var car = game.car
+	car.position = Vector3(0, 1000, 0)
+	car.heading = 0
+	car.rotation = Vector3.ZERO
+	car.body_visual.rotation = Vector3.ZERO
+	for mode in game.CAMERA_NAMES.size():
+		game.camera_mode = mode
+		car.speed = 0
+		game._update_camera(1.0, true)
+		var relative: Vector3 = game.camera.position - car.position
+		var fov: float = game.camera.fov
+		car.speed = 80
+		car.position += Vector3(0, 0, 10)
+		game._update_camera(1.0/60)
+		check(is_equal_approx(fov, game.camera.fov) and relative.distance_to(game.camera.position-car.position)<.002, "Fixed position and FOV at 288km/h view=" + str(mode))
+	car.speed = 0
+	car.gear = 1
+	car.shift_timer = 0
+	press(game, KEY_E)
+	check(car.gear == 2 and not car.automatic_gears, "E upshift enters persistent manual mode")
+	press(game, KEY_E)
+	check(car.gear == 2, "Shift cooldown prevents stacked inputs")
+	car.shift_timer = 0
+	press(game, KEY_Q)
+	check(car.gear == 1, "Q downshifts")
+	car.speed = 70
+	car.gear = 4
+	car.shift_timer = 0
+	press(game, KEY_Q)
+	check(car.gear == 4, "Unsafe over-rev downshift is rejected")
+	press(game, KEY_M)
+	check(car.automatic_gears, "M restores automatic transmission")
+	press(game, KEY_M)
+	car.speed = 0
+	car.gear = 1
+	car.shift_timer = 0
+	press(game, KEY_Q)
+	check(car.gear == 0, "Neutral accessible when stopped")
+	car.shift_timer = 0
+	press(game, KEY_Q)
+	check(car.gear == -1, "Reverse accessible when stopped")
+	# Large dedicated floor isolates handling from track layout and obstacles.
+	var floor_body := StaticBody3D.new()
+	var collider := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(2000, 1, 2000)
+	collider.shape = shape
+	floor_body.add_child(collider)
+	floor_body.position = Vector3(10000, -.5, 10000)
+	root.add_child(floor_body)
+	await physics_frame
+	for key in ["v8", "r6", "v6"]:
+		car.configure_vehicle(key)
+		car.automatic_gears = true
+		car.reset_at(Vector3(10000, 0, 10000), Vector3.FORWARD * -1)
+		for i in 30:
+			await physics_frame
+			car.drive(1.0/60,0,0,0,false,false)
+		car.velocity = Vector3(0,0,35)
+		car.speed = 35
+		var peak_slip := 0.0
+		for i in 120:
+			await physics_frame
+			car.drive(1.0/60,.45,0,.35,false,false)
+			peak_slip = maxf(peak_slip, car.slip)
+		check(peak_slip < 1.2, "Controlled dry corner sideslip " + key + " = " + str(peak_slip))
+		for i in 40:
+			await physics_frame
+			car.drive(1.0/60,0,0,0,false,false)
+		check(absf(car.yaw_rate)<.015 and car.slip<.10, "Release steering settles without sustained drift " + key)
+	car.automatic_gears = false
+	car.reset_at(Vector3(10000,0,10000),Vector3(0,0,1))
+	car.gear = 2
+	for i in 180:
+		await physics_frame
+		car.drive(1.0/60,1,0,0,false,false)
+	check(car.gear == 2 and car.speed>10, "Manual gear persists under acceleration")
+	car.reset_at(Vector3(10000,0,10000),Vector3(0,0,1))
+	car.gear = 0
+	for i in 60:
+		await physics_frame
+		car.drive(1.0/60,1,0,0,false,false)
+	check(absf(car.speed)<.1, "Neutral does not drive wheels")
+	car.gear = -1
+	for i in 60:
+		await physics_frame
+		car.drive(1.0/60,1,0,0,false,false)
+	check(car.speed < -2, "Manual reverse drives backwards")
+	for i in 120:
+		await physics_frame
+		car.drive(1.0/60,0,1,0,false,false)
+	check(absf(car.speed)<.1, "Manual brake stops reverse without reaccelerating")
+	game.queue_free()
+	floor_body.queue_free()
+	await process_frame
+	print("CONTROL RESULT: ",checks," checks, ", failures," failures")
+	quit(1 if failures else 0)

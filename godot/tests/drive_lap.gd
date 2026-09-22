@@ -17,6 +17,7 @@ func _run() -> void:
 	game.set_physics_process(false)
 	game.state = game.State.RACING
 	var car = game.car
+	car.automatic_gears = true
 	var peak_offroad := 0.0
 	var airborne := 0
 	var stalled := 0
@@ -24,13 +25,21 @@ func _run() -> void:
 	for step in 30000:
 		await physics_frame
 		var sample: Dictionary = game.track.sample(car.position)
-		var look: Dictionary = game.track.at_progress(float(sample.progress) + (9.0 + absf(car.speed) * 0.40) / game.track.length)
+		var look: Dictionary = game.track.at_progress(float(sample.progress) + (7.0 + absf(car.speed) * 0.28) / game.track.length)
 		var target: Vector3 = look.point - car.position
 		var error := wrapf(atan2(target.x, target.z) - car.heading, -PI, PI)
-		var ahead: Dictionary = game.track.at_progress(float(sample.progress) + 65.0 / game.track.length)
-		var bend := absf((sample.tangent as Vector3).signed_angle_to(ahead.tangent, Vector3.UP))
-		var target_speed := clampf(42.0 - bend * 30, 13, 42)
-		car.drive(1.0 / 60, 1.0 if car.speed < target_speed else 0.0, 0.65 if car.speed > target_speed + 1.0 else 0.0, clampf(-error * 2.7, -1, 1), false, float(sample.distance) > game.track.half_width + .85)
+		var target_speed := 42.0
+		# Brake before curvature: the controller no longer relies on unbounded yaw.
+		for distance in [10.0, 25.0, 45.0, 70.0, 100.0]:
+			var entry: Dictionary = game.track.at_progress(float(sample.progress)+(distance-8.0)/game.track.length)
+			var exit_point: Dictionary = game.track.at_progress(float(sample.progress)+(distance+8.0)/game.track.length)
+			var curvature := absf((entry.tangent as Vector3).signed_angle_to(exit_point.tangent,Vector3.UP))/16.0
+			var corner_speed := sqrt(float(car.profile.grip)*.95/maxf(curvature,.001))
+			target_speed = minf(target_speed,sqrt(corner_speed*corner_speed+2.0*10.0*maxf(distance-12.0,0.0)))
+		var look_distance := maxf(Vector2(target.x,target.z).length(),1.0)
+		var angle := .55/(1.0+pow(absf(car.speed)/22.0,2.0))
+		var turn := -atan(2.0*float(car.profile.wheelbase)*sin(error)/look_distance)/angle
+		car.drive(1.0/60,1.0 if car.speed<target_speed else 0.0,.8 if car.speed>target_speed+.5 else 0.0,clampf(turn,-1,1),false,float(sample.distance)>game.track.half_width+.85)
 		stalled = stalled + 1 if step > 120 and absf(car.speed) < 1.5 else 0
 		if step % 300 == 0:
 			if step > 300 and absf(float(sample.progress) - last_checkpoint_progress) < 0.001:
