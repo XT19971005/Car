@@ -33,7 +33,7 @@ func run() -> void:
 	game.camera.position=p.point+p.tangent*7+right*4+Vector3.UP*2.4
 	game.camera.look_at(p.point+Vector3.UP*.6)
 	game.camera.fov=52
-	game.weather.set_weather("sunset")
+	game.weather.set_weather("clear")
 	await shot("race")
 	game.queue_free()
 	await process_frame

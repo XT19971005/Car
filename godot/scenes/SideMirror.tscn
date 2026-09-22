@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/side_mirror.gd" id="Script"]
+[node name="SideMirror" type="Node3D"]
+script = ExtResource("Script")
+[node name="Viewport" type="SubViewport" parent="."]
+size = Vector2i(256, 128)
+render_target_update_mode = 0
+[node name="Camera" type="Camera3D" parent="Viewport"]
+current = true
+fov = 58.0
+near = 0.05
+far = 220.0
+cull_mask = 1

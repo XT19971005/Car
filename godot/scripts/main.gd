@@ -213,6 +213,7 @@ func _build_rear_view() -> void:
 	rear_display.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func start_race() -> void:
+	weather.set_weather(weather_mode)
 	if track.circuit_key != selected_track: select_track(selected_track)
 	automatic_gears = true
 	car.automatic_gears = true
@@ -304,7 +305,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_echo() and state == State.RACING:
 		if event.is_action_pressed("shift_down"):
 			var shifted: bool = car.request_downshift()
-			message = "降挡" if shifted else "降挡保护"
+			message = "降挡制动" if shifted else "已是一挡"
 			message_time = 1.0
 
 	if event.is_action_pressed("camera") and not event.is_echo():
@@ -419,6 +420,7 @@ func _update_camera(dt: float, snap := false) -> void:
 		camera.look_at(Vector3(9998.8, .65, 1.2))
 		camera.fov = 44
 		if rear_display: rear_display.hide()
+		for mirror in car.side_mirrors: mirror.update_view(false)
 		return
 	if not mouse_drag:
 		orbit = lerpf(orbit, 0, 1 - exp(-dt * 8))
@@ -441,15 +443,19 @@ func _update_camera(dt: float, snap := false) -> void:
 		camera.look_at(car.position + Vector3.UP * .85 + basis_yaw.z * 2.0)
 	elif onboard:
 		camera.position = car.cockpit_anchor.global_position
+		if camera_mode in [2, 6]: camera.position -= car.body_visual.global_basis.z * (.32 if selected_vehicle == "v6" else .20)
 		if camera_mode in [3, 7]: camera.position += car.body_visual.global_basis.z * .10 + Vector3.UP * .035
 		if camera_mode == 6: camera.position += car.body_visual.global_basis.y * .025
-		camera.look_at(camera.position + car.body_visual.global_basis.z * 50, Vector3.UP)
+		camera.look_at(camera.position + car.body_visual.global_basis.z * 50 - Vector3.UP * (5.25 if camera_mode in [2, 6] else 0.0), Vector3.UP)
 	else:
 		var bonnet_height := .87 if selected_vehicle == "v8" else 1.10 if selected_vehicle == "r6" else .88
 		var local := Vector3(0, bonnet_height, float(car.profile.length) * .27) if camera_mode == 4 else Vector3(0, .42, float(car.profile.length) * .5 + .08)
 		camera.position = car.to_global(local)
 		camera.look_at(camera.position + car.global_basis.z * 50, Vector3.UP)
-	camera.fov = 54.0 if onboard else 58.0
+	camera.fov = 60.0 if camera_mode in [2, 6] else 54.0 if onboard else 58.0
+	for mirror in car.side_mirrors:
+		var in_view := not camera.is_position_behind(mirror.global_position) and get_viewport().get_visible_rect().has_point(camera.unproject_position(mirror.global_position))
+		mirror.update_view(onboard and in_view and state in [State.COUNTDOWN, State.RACING])
 	if rear_camera:
 		rear_display.visible = onboard
 		rear_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if onboard and state in [State.COUNTDOWN, State.RACING] else SubViewport.UPDATE_DISABLED
@@ -543,6 +549,7 @@ func _choose_showroom_car(key: String) -> void:
 		if ui.vehicle_choice.get_item_metadata(i) == key: ui.vehicle_choice.select(i)
 
 func show_home() -> void:
+	weather.world.environment.ambient_light_energy = .22
 	state = State.MENU
 	car.velocity = Vector3.ZERO
 	audio.active = false

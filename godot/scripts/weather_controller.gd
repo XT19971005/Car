@@ -20,7 +20,7 @@ func set_weather(key: String) -> void:
 	sun.light_energy = 1.15 if key == "clear" else .32 if key == "overcast" else .16
 	sun.light_color = Color("ffe5bd") if key == "clear" else Color("c7d9ee")
 	world.environment.fog_density = .00014 if key == "clear" else .00028 if key == "overcast" else .00065
-	world.environment.ambient_light_energy = .55 if key == "clear" else .72
+	world.environment.ambient_light_energy = .40 if key == "clear" else .60
 	world.environment.fog_light_color = Color("9cafba") if key == "clear" else Color("7e909f") if key == "overcast" else Color("667c8c")
 	world.environment.ambient_light_color = Color("99b5d3") if key == "clear" else Color("a2b4c7")
 	world.environment.ssr_enabled = key == "rain"
@@ -29,7 +29,7 @@ func set_weather(key: String) -> void:
 		sun.light_color = Color("ffd09a")
 		world.environment.fog_density = .00020
 		world.environment.fog_light_color = Color("b2a092")
-		world.environment.ambient_light_energy = .62
+		world.environment.ambient_light_energy = .38
 		world.environment.ambient_light_color = Color("aeb6d1")
 	rain.emitting = key == "rain"
 	RenderingServer.global_shader_parameter_set("weather_wetness", 1.0 if key == "rain" else 0.0)

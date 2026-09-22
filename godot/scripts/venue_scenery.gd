@@ -99,6 +99,23 @@ func _mark(surface: SurfaceTool, track: Node3D, progress: float, length: float, 
 	for i in [0, 2, 1, 0, 3, 2]:
 		surface.add_vertex(vertices[i] + Vector3.UP * .016)
 
+func barrier_height(track: Node3D, p: Vector3) -> float:
+	# Height queries must not change their nearest segment after assigning Y.
+	var closest := INF
+	var road_y := 0.0
+	var route: PackedVector3Array = track.points
+	for i in route.size():
+		var a: Vector3 = route[i]
+		var b: Vector3 = route[(i+1)%route.size()]
+		var delta := Vector2(b.x-a.x,b.z-a.z)
+		var fraction := clampf(Vector2(p.x-a.x,p.z-a.z).dot(delta)/maxf(delta.length_squared(),.001),0,1)
+		var point := a.lerp(b,fraction)
+		var distance := Vector2(p.x-point.x,p.z-point.z).length_squared()
+		if distance < closest:
+			closest=distance
+			road_y=point.y
+	return road_y if closest < 28.0*28.0 else ground_height(p)
+
 func ground_height(p: Vector3) -> float:
 	var uv := (Vector2(p.x, p.z) - bounds_min) / (bounds_max - bounds_min)
 	var x := clampf(uv.x * (columns - 1), 0, columns - 1.001)
@@ -274,12 +291,21 @@ func _facilities(track: Node3D) -> void:
 			var loc: Vector3 = p.point + right * side * (track.half_width + 8)
 			if float(track.sample(loc).distance) < track.half_width + 4:
 				continue
-			_place("ENV_Circuit_Guardrail_8m", loc, yaw)
-			_place("ENV_Circuit_SafetyFence_8m", loc + right * side * .3, yaw)
+			var forward := Vector3(p.tangent.x, 0, p.tangent.z).normalized()
+			var a := loc - forward * 4.0
+			var b := loc + forward * 4.0
+			a.y = barrier_height(track,a)
+			b.y = barrier_height(track,b)
+			loc = (a+b)*.5
+			var pitch := -atan2(b.y-a.y,8.0)
+			var scale_z := a.distance_to(b)/8.0
+			_place("ENV_Circuit_Guardrail_8m", loc, yaw, Vector3(1,1,scale_z), pitch)
+			_place("ENV_Circuit_SafetyFence_8m", loc + right * side * .3, yaw, Vector3(1,1,scale_z), pitch)
 			var collision := CollisionShape3D.new()
-			collision.shape = shape
-			collision.position = loc + Vector3.UP * .525
-			collision.rotation.y = yaw
+			collision.shape = shape.duplicate()
+			collision.shape.size.z *= scale_z
+			collision.rotation = Vector3(pitch,yaw,0)
+			collision.position = loc + collision.basis.y * .525
 			barrier_body.add_child(collision)
 		if metre % 400 == 0:
 			var loc: Vector3 = p.point + right * (track.half_width + 12)
@@ -321,14 +347,20 @@ func _mapped_barrier(track: Node3D, feature: Dictionary, poly: PackedVector2Arra
 			var p := a.lerp(b, (section + .5) / count)
 			var nearest: Dictionary = track.sample(p)
 			if nearest.distance < track.half_width + 2 or nearest.distance > 170: continue
-			p.y = nearest.point.y if nearest.distance < 28 else ground_height(p)
+			var first := a.lerp(b, float(section) / count)
+			var last := a.lerp(b, float(section + 1) / count)
+			first.y = barrier_height(track, first)
+			last.y = barrier_height(track, last)
+			p = (first + last) * .5
+			var pitch := -atan2(last.y-first.y, distance/count)
+			var span := first.distance_to(last)
 			var asset := "ENV_Circuit_SafetyFence_8m" if feature.barrier_type == "fence" else "ENV_Circuit_Guardrail_8m"
-			_place(asset, p, yaw, Vector3(1, 1, distance / count / 8))
+			_place(asset, p, yaw, Vector3(1, 1, span / 8), pitch)
 			var collider := CollisionShape3D.new()
 			var shape := BoxShape3D.new()
-			shape.size = Vector3(.20, 1.0, distance / count)
+			shape.size = Vector3(.20, 1.0, span)
 			collider.shape = shape
-			collider.position = p + Vector3.UP * .50
-			collider.rotation.y = yaw
+			collider.rotation = Vector3(pitch, yaw, 0)
+			collider.position = p + collider.basis.y * .50
 			body.add_child(collider)
 			mapped_barriers = true

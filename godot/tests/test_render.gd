@@ -18,6 +18,7 @@ func _run() -> void:
 			var previous := Time.get_ticks_usec()
 			for i in 120:
 				await process_frame
+				await RenderingServer.frame_post_draw
 				var current := Time.get_ticks_usec()
 				durations.append(float(current - previous) / 1000)
 				previous = current

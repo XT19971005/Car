@@ -7,7 +7,7 @@ void vertex(){world_position=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz;}
 void fragment(){
  float grain=noise(world_position.xz*36.0);
  float fade=1.0-clamp(length(fwidth(world_position.xz))*8.0,0.0,1.0);
- ALBEDO=mix(vec3(.052,.059,.061),vec3(.064,.071,.073),grain*fade+.5*(1.0-fade));
+ ALBEDO=mix(vec3(.074,.082,.086),vec3(.086,.094,.098),grain*fade+.5*(1.0-fade));
  float puddle=smoothstep(.44,.65,noise(world_position.xz*.15));
  ALBEDO*=mix(.90,1.05,noise(world_position.xz*.09));
  ALBEDO*=mix(1.0,.52,weather_wetness);

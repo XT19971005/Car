@@ -49,12 +49,12 @@ func run() -> void:
 	press(game, KEY_Q)
 	check(car.gear == 3 and car.automatic_gears and car.downshift_hold > 0, "Q downshifts without disabling automatic")
 	press(game, KEY_Q)
-	check(car.gear == 3, "Downshift cooldown")
+	check(car.gear == 2, "Repeated Q forces consecutive downshifts")
 	car.speed = 70
 	car.gear = 4
 	car.shift_timer = 0
 	press(game, KEY_Q)
-	check(car.gear == 4, "Unsafe over-rev downshift is rejected")
+	check(car.gear == 3, "Q accepts forced high-rpm downshift")
 	press(game, KEY_M)
 	check(car.automatic_gears, "Legacy M cannot disable automatic")
 	var loaded_id: int = game.track.get_instance_id()
@@ -116,6 +116,37 @@ func run() -> void:
 		await physics_frame
 		car.drive(1.0/60,0,1,0,false,false)
 	check(absf(car.speed)<.1, "Manual brake stops reverse without reaccelerating")
+	var coast_speeds: Array[float] = []
+	for force_down in [false, true]:
+		car.automatic_gears = true
+		car.reset_at(Vector3(10000,0,10000),Vector3(0,0,1))
+		car.velocity = Vector3(0,0,60)
+		car.speed = 60
+		car.gear = 5
+		if force_down:
+			car.request_downshift()
+			car.request_downshift()
+		for i in 60:
+			await physics_frame
+			car.drive(1.0/60,0,0,0,false,false)
+		coast_speeds.append(car.speed)
+		if force_down: check(car.gear == 3, "Forced low gear remains engaged despite high rpm")
+	check(coast_speeds[1] < coast_speeds[0] - 7, "Forced downshift produces meaningful engine braking")
+	print("COAST / DOWNSHIFT SPEED: ",coast_speeds)
+	for key in ["v8", "r6", "v6"]:
+		car.configure_vehicle(key)
+		car.reset_at(Vector3(10000,0,10000),Vector3(0,0,1))
+		for i in 8:
+			await physics_frame
+			car.drive(1.0/60,0,0,1,false,false)
+		check(car.steering > .99, "Full keyboard steering within 134ms " + key)
+		check(not car.steering_wheel.basis.is_equal_approx(car.steering_wheel_rest), "Steering wheel visibly rotates " + key)
+		for i in 16:
+			await physics_frame
+			car.drive(1.0/60,0,0,-1,false,false)
+		check(car.steering < -.99, "Direction reversal within 267ms " + key)
+		car.reset_at(Vector3(10000,0,10000),Vector3(0,0,1))
+		check(car.steering_wheel.basis.is_equal_approx(car.steering_wheel_rest), "Reset recentres wheel " + key)
 	var launch_speeds: Array[float] = []
 	for launch_gear in [1, 6]:
 		car.automatic_gears = false

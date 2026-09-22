@@ -82,7 +82,7 @@ func build(track: Node3D) -> void:
 			add_child(label)
 	_flush()
 
-func _place(asset: String, position: Vector3, yaw: float, size := Vector3.ONE) -> void:
+func _place(asset: String, position: Vector3, yaw: float, size := Vector3.ONE, pitch := 0.0) -> void:
 	if not meshes.has(asset):
 		var packed := load(ASSET_ROOT + asset + ".glb") as PackedScene
 		if not packed:
@@ -101,7 +101,7 @@ func _place(asset: String, position: Vector3, yaw: float, size := Vector3.ONE) -
 		meshes[asset] = node.mesh
 		poses[asset] = pose
 		root.free()
-	var pose := Transform3D(Basis(Vector3.UP, yaw) * Basis.from_scale(size), position)
+	var pose := Transform3D(Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, pitch) * Basis.from_scale(size), position)
 	var cell := Vector2i(floori(position.x / 200), floori(position.z / 200))
 	var group := "%s_%d_%d" % [asset, cell.x, cell.y]
 	if not batches.has(group):

@@ -24,7 +24,9 @@ var vehicle_key := "v8"
 var profile: Dictionary = preload("res://scripts/car_catalog.gd").CARS.v8
 var cockpit_anchor: Node3D
 var steering_wheel: Node3D
+var steering_wheel_rest := Basis.IDENTITY
 var dashboard: Node3D
+var side_mirrors: Array[Node3D] = []
 var acceleration_feedback := 0.0
 var impact_feedback := 0.0
 var shift_feedback := 0.0
@@ -59,6 +61,7 @@ func configure_vehicle(key: String) -> void:
 	for child in body_visual.get_children():
 		body_visual.remove_child(child)
 		child.queue_free()
+	side_mirrors.clear()
 	wheel_nodes.clear()
 	wheel_rotations.clear()
 	var model: Node3D = load("res://assets/cars/" + str(profile.asset) + ".glb").instantiate()
@@ -69,10 +72,25 @@ func configure_vehicle(key: String) -> void:
 			wheel_nodes.append(node)
 			wheel_rotations.append(node.rotation)
 	cockpit_anchor = model.find_child("cockpit_camera", true, false)
-	steering_wheel = model.find_child("steering_wheel", true, false)
+	steering_wheel = model.find_child("SteeringControl", true, false)
+	if steering_wheel:
+		steering_wheel_rest = steering_wheel.basis
+		steering_wheel.add_child(preload("res://scenes/SteeringWheelMarker.tscn").instantiate())
 	var screen := model.find_child("dash_display", true, false) as Node3D
 	dashboard = preload("res://scenes/CockpitDisplay.tscn").instantiate()
 	screen.add_child(dashboard)
+	for suffix in ["L", "R"]:
+		var glass := model.find_child("MirrorGlass_" + suffix, true, false) as MeshInstance3D
+		var anchor := model.find_child("MirrorView_" + suffix, true, false) as Node3D
+		if not glass or not anchor: continue
+		var mirror = preload("res://scenes/SideMirror.tscn").instantiate()
+		anchor.add_child(mirror)
+		mirror.vehicle_body = body_visual
+		mirror.side = 1.0 if suffix == "L" else -1.0
+		mirror.camera_point = body_visual.to_local(anchor.global_position)
+		mirror.bind_surface(glass)
+		mirror.global_position = glass.to_global(glass.get_aabb().get_center())
+		side_mirrors.append(mirror)
 
 func reset_at(point: Vector3, direction: Vector3) -> void:
 	position = point + Vector3.UP * 0.14
@@ -82,6 +100,7 @@ func reset_at(point: Vector3, direction: Vector3) -> void:
 	speed = 0.0
 	previous_speed = 0.0
 	steering = 0.0
+	if steering_wheel: steering_wheel.basis = steering_wheel_rest
 	yaw_rate = 0.0
 	throttle = 0.0
 	brake = 0.0
@@ -100,7 +119,9 @@ var downshift_hold := 0.0
 
 func request_downshift() -> bool:
 	if gear <= 1: return false
-	if not shift_gear(-1): return false
+	gear -= 1
+	shift_timer = .12
+	shift_feedback = 1.0
 	downshift_hold = 2.0
 	return true
 
@@ -117,7 +138,7 @@ func shift_gear(direction: int) -> bool:
 	return true
 
 func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool, offroad: bool) -> void:
-	steering = move_toward(steering, turn, dt * (3.8 if absf(turn) > 0.05 else 10.0))
+	steering = move_toward(steering, turn, dt * (9.0 if absf(turn) > 0.05 else 12.0))
 	throttle = move_toward(throttle, gas, dt * 2.8)
 	brake = move_toward(brake, stopping, dt * 6.0)
 	var forward := Vector3(sin(heading), 0, cos(heading))
@@ -149,6 +170,11 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 			longitudinal = move_toward(longitudinal, minf(max_velocity, gear_limit), maxf(3.0, float(profile.acceleration) - longitudinal * 0.1) * throttle * drive_scale * dt)
 	else:
 		longitudinal = move_toward(longitudinal, 0.0, (0.7 + absf(longitudinal) * 0.025) * dt)
+	# Forced downshift adds engine braking even while the accelerator is held.
+	if downshift_hold > 0 and longitudinal > 0 and gear > 0:
+		var coupled := longitudinal / 2.05 * 60.0 * RATIOS[gear] * 3.4
+		var engine_braking := lerpf(3.0, 16.0, clampf((coupled - 2200.0) / 8000.0, 0.0, 1.0))
+		longitudinal = move_toward(longitudinal, 0.0, engine_braking * dt)
 	if offroad and absf(longitudinal) > max_velocity:
 		longitudinal = move_toward(longitudinal, signf(longitudinal) * max_velocity, dt * 12.0)
 	if handbrake:
@@ -158,7 +184,7 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 	var desired_yaw := -steering * longitudinal / float(profile.wheelbase) * tan(steering_angle)
 	var yaw_limit := minf(1.5, grip * 1.65 * (1.0 - brake * .20) / maxf(absf(longitudinal), 3.0))
 	desired_yaw = clampf(desired_yaw, -yaw_limit, yaw_limit)
-	yaw_rate = lerpf(yaw_rate, desired_yaw, 1.0 - exp(-dt * (12.0 if not offroad else 6.0)))
+	yaw_rate = lerpf(yaw_rate, desired_yaw, 1.0 - exp(-dt * (18.0 if not offroad else 9.0)))
 	heading += yaw_rate * dt
 	# Resolve tyre forces in the updated vehicle frame, then damp sideslip.
 	var momentum := forward * longitudinal + right * lateral
@@ -194,7 +220,7 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 			gear = maxi(gear, 1)
 			var predicted := absf(speed) / 2.05 * 60.0 * ratio[gear] * 3.4
 			if shift_timer <= 0:
-				if predicted > 7200 and gear < 6 and (downshift_hold <= 0 or predicted > 7700):
+				if predicted > 7200 and gear < 6 and downshift_hold <= 0:
 					gear += 1
 					shift_timer = 0.35
 				elif predicted < 2600 and gear > 1:
@@ -218,7 +244,7 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 		if "front" in wheel_nodes[i].name:
 			wheel_nodes[i].rotation.y = wheel_rotations[i].y - steering * steering_angle
 	if steering_wheel:
-		steering_wheel.rotation.z = -steering * 1.8
+		steering_wheel.basis = Basis(Vector3.BACK, steering * deg_to_rad(150.0)) * steering_wheel_rest
 	if dashboard:
 		dashboard.update_readout(gear, speed, rpm)
 
