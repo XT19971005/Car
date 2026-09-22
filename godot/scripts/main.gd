@@ -19,7 +19,8 @@ var selected_track := "monza"
 var countdown := 3.0
 var go_timer := 0.0
 const CAMERA_NAMES := ["近追车", "远追车", "驾驶舱", "仪表台", "引擎盖", "保险杠", "头盔", "纯路面"]
-var automatic_gears := false
+var automatic_gears := true
+var loading_race := false
 var camera_mode := 2
 var selected_vehicle := "v8"
 var reduced_motion := false
@@ -65,11 +66,11 @@ func _ready() -> void:
 	camera.current = true
 	ui = $RaceInterface
 	ui.populate_tracks(tracks)
-	ui.start_requested.connect(start_race)
+	ui.start_requested.connect(_request_race)
 	ui.weather_selected.connect(_set_weather)
 	ui.find_child("WeatherChoice", true, false).select(preload("res://scripts/weather_controller.gd").KEYS.find(weather_mode))
 	ui.restart_requested.connect(start_race)
-	ui.track_selected.connect(select_track)
+	ui.track_selected.connect(preview_track)
 	ui.pause_requested.connect(pause_race)
 	ui.resume_requested.connect(resume_race)
 	ui.menu_requested.connect(show_home)
@@ -97,7 +98,7 @@ func _ready() -> void:
 	get_tree().auto_accept_quit = false
 
 func _configure_input() -> void:
-	var keys := {"accelerate": [KEY_W, KEY_UP], "brake": [KEY_S, KEY_DOWN], "left": [KEY_A, KEY_LEFT], "right": [KEY_D, KEY_RIGHT], "handbrake": [KEY_SPACE], "reset_car": [KEY_R], "shift_down": [KEY_Q], "shift_up": [KEY_E], "transmission": [KEY_M], "camera": [KEY_C, KEY_F1], "pause_race": [KEY_ESCAPE]}
+	var keys := {"accelerate": [KEY_W, KEY_UP], "brake": [KEY_S, KEY_DOWN], "left": [KEY_A, KEY_LEFT], "right": [KEY_D, KEY_RIGHT], "handbrake": [KEY_SPACE], "reset_car": [KEY_R], "shift_down": [KEY_Q], "camera": [KEY_C, KEY_F1], "pause_race": [KEY_ESCAPE]}
 	for action: String in keys:
 		if not InputMap.has_action(action):
 			InputMap.add_action(action, 0.15)
@@ -110,7 +111,7 @@ func _configure_input() -> void:
 		event.axis = binding[1]
 		event.axis_value = binding[2]
 		InputMap.action_add_event(binding[0], event)
-	for binding in [["shift_down", JOY_BUTTON_LEFT_SHOULDER], ["shift_up", JOY_BUTTON_RIGHT_SHOULDER], ["handbrake", JOY_BUTTON_A], ["camera", JOY_BUTTON_Y], ["reset_car", JOY_BUTTON_BACK], ["pause_race", JOY_BUTTON_START]]:
+	for binding in [["shift_down", JOY_BUTTON_LEFT_SHOULDER], ["handbrake", JOY_BUTTON_A], ["camera", JOY_BUTTON_Y], ["reset_car", JOY_BUTTON_BACK], ["pause_race", JOY_BUTTON_START]]:
 		var event := InputEventJoypadButton.new()
 		event.button_index = binding[1]
 		InputMap.action_add_event(binding[0], event)
@@ -119,14 +120,45 @@ func _build_environment() -> void:
 	weather = $Weather
 	weather.set_weather(weather_mode)
 
+func preview_track(key: String) -> void:
+	if loading_race or not tracks.has(key): return
+	selected_track = key
+	ui.select_track(key, tracks[key], null, best_time())
+
+func _request_race() -> void:
+	if loading_race: return
+	loading_race = true
+	var buttons: Array[Node] = ui.menu.find_children("*", "BaseButton", true, false)
+	for button in buttons: button.disabled = true
+	ui.start_button.text = "正在加载赛道…"
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var key := selected_track
+	var path := "res://scenes/circuits/" + key + ".tscn"
+	if track.circuit_key != key:
+		var error := ResourceLoader.load_threaded_request(path)
+		if error == OK:
+			while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+				await get_tree().process_frame
+			if ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_LOADED:
+				_install_track(key, ResourceLoader.load_threaded_get(path))
+	for button in buttons: button.disabled = false
+	loading_race = false
+	ui.start_button.text = "开始比赛   →"
+	if track.circuit_key == key: start_race()
+	else: ui.start_button.text = "加载失败，点击重试"
+
 func select_track(key: String) -> void:
 	if not tracks.has(key):
 		return
+	_install_track(key, load("res://scenes/circuits/" + key + ".tscn"))
+
+func _install_track(key: String, packed: PackedScene) -> void:
 	selected_track = key
 	if track:
 		remove_child(track)
 		track.queue_free()
-	track = load("res://scenes/circuits/" + key + ".tscn").instantiate()
+	track = packed.instantiate()
 	add_child(track)
 	_build_gate_marker()
 	car.reset_at(track.points[0], track.tangent(0))
@@ -141,7 +173,7 @@ func _set_weather(key: String) -> void:
 	if key not in preload("res://scripts/weather_controller.gd").KEYS: return
 	weather_mode = key
 	weather.set_weather(key)
-	ui.select_track(selected_track, tracks[selected_track], track, best_time())
+	ui.select_track(selected_track, tracks[selected_track], null, best_time())
 	_save_preferences()
 
 func best_time() -> float:
@@ -153,7 +185,7 @@ func select_vehicle(key: String) -> void:
 	car.reset_at(track.points[0], track.tangent(0))
 	ui.vehicle_detail.text = "车长 %.2f 米    车宽 %.2f 米" % [car.profile.length, car.profile.width]
 	ui.find_child("VehiclePreview", true, false).texture = load("res://assets/ui/garage_%s.png" % key)
-	ui.select_track(selected_track, tracks[selected_track], track, best_time())
+	ui.select_track(selected_track, tracks[selected_track], null, best_time())
 	_update_camera(1, true)
 
 func _build_rear_view() -> void:
@@ -181,6 +213,9 @@ func _build_rear_view() -> void:
 	rear_display.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func start_race() -> void:
+	if track.circuit_key != selected_track: select_track(selected_track)
+	automatic_gears = true
+	car.automatic_gears = true
 	if front:
 		front.hide()
 	if showroom:
@@ -214,7 +249,7 @@ func show_menu() -> void:
 	state = State.MENU
 	car.velocity = Vector3.ZERO
 	audio.active = false
-	ui.select_track(selected_track, tracks[selected_track], track, best_time())
+	ui.select_track(selected_track, tracks[selected_track], null, best_time())
 	ui.show_menu()
 	_save_preferences()
 
@@ -255,6 +290,7 @@ func reset_car() -> void:
 	_update_camera(1.0, true)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if loading_race: return
 	if event.is_action_pressed("pause_race"):
 		if state == State.MENU:
 			show_home()
@@ -266,19 +302,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if state != State.RACING and state != State.COUNTDOWN:
 		return
 	if not event.is_echo() and state == State.RACING:
-		if event.is_action_pressed("shift_down") or event.is_action_pressed("shift_up"):
-			car.automatic_gears = false
-			automatic_gears = false
-			var shifted: bool = car.shift_gear(-1 if event.is_action_pressed("shift_down") else 1)
-			message = "手动换挡" if shifted else "当前无法换挡：转速或车速保护"
-			message_time = 1.3
-			_save_preferences()
-		if event.is_action_pressed("transmission"):
-			automatic_gears = not automatic_gears
-			car.automatic_gears = automatic_gears
-			message = "自动换挡" if automatic_gears else "手动换挡：Q 降挡 · E 升挡"
-			message_time = 2.0
-			_save_preferences()
+		if event.is_action_pressed("shift_down"):
+			var shifted: bool = car.request_downshift()
+			message = "降挡" if shifted else "降挡保护"
+			message_time = 1.0
+
 	if event.is_action_pressed("camera") and not event.is_echo():
 		switch_camera()
 	if event.is_action_pressed("reset_car") and not event.is_echo():
@@ -432,7 +460,7 @@ func _load_preferences() -> void:
 	if test_mode:
 		return
 	if preferences.load("user://driver.cfg") == OK:
-		automatic_gears = bool(preferences.get_value("settings", "automatic_gears", false))
+		automatic_gears = true
 		volume = clampf(float(preferences.get_value("settings", "volume", 0.7)), 0, 1)
 		fullscreen = bool(preferences.get_value("settings", "fullscreen", false))
 		selected_vehicle = str(preferences.get_value("settings", "vehicle", "v8"))

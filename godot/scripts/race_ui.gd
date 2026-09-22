@@ -110,11 +110,15 @@ func populate_tracks(catalog: Dictionary) -> void:
 
 func select_track(key: String, data: Dictionary, world: Node3D, best: float) -> void:
 	track_title.text = data.name
-	track_detail.text = "%s  /  全长 %.3f 公里" % [data.region, world.length / 1000.0]
+	var points: PackedVector3Array = world.points if world else data.points
+	var metres := 0.0
+	for i in points.size(): metres += points[i].distance_to(points[(i+1)%points.size()])
+	track_detail.text = "%s  /  全长 %.3f 公里" % [data.region, metres / 1000.0]
 	track_best.text = "个人最佳   " + Session.time_text(best)
-	preview.configure(world.points)
-	preview.driver = Vector2(world.points[0].x, world.points[0].z)
-	minimap.configure(world.points)
+	preview.configure(points)
+	preview.driver = Vector2(points[0].x, points[0].z)
+	if world: minimap.configure(points)
+
 	for track: String in track_buttons:
 		track_buttons[track].add_theme_stylebox_override("normal", panel(Color("8e2431") if track == key else Color("191c22"), 12))
 

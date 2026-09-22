@@ -27,6 +27,7 @@ func _run() -> void:
 	game.ui.start_button.grab_focus()
 	await key(KEY_ENTER, true)
 	await key(KEY_ENTER, false)
+	while game.loading_race: await process_frame
 	check(game.state == game.State.COUNTDOWN, "Enter starts race from focused menu button")
 	for i in 200:
 		await physics_frame

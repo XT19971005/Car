@@ -35,32 +35,36 @@ func run() -> void:
 		car.position += Vector3(0, 0, 10)
 		game._update_camera(1.0/60)
 		check(is_equal_approx(fov, game.camera.fov) and relative.distance_to(game.camera.position-car.position)<.002, "Fixed position and FOV at 288km/h view=" + str(mode))
+	check(car.automatic_gears, "Default transmission is automatic")
 	car.speed = 0
 	car.gear = 1
 	car.shift_timer = 0
-	press(game, KEY_E)
-	check(car.gear == 2 and not car.automatic_gears, "E upshift enters persistent manual mode")
-	press(game, KEY_E)
-	check(car.gear == 2, "Shift cooldown prevents stacked inputs")
+	for i in 8: press(game, KEY_E)
+	check(car.gear == 1 and car.automatic_gears, "E cannot stack gears at launch")
+	press(game, KEY_Q)
+	check(car.gear == 1, "Q does not select neutral at launch")
+	car.speed = 30
+	car.gear = 4
 	car.shift_timer = 0
 	press(game, KEY_Q)
-	check(car.gear == 1, "Q downshifts")
+	check(car.gear == 3 and car.automatic_gears and car.downshift_hold > 0, "Q downshifts without disabling automatic")
+	press(game, KEY_Q)
+	check(car.gear == 3, "Downshift cooldown")
 	car.speed = 70
 	car.gear = 4
 	car.shift_timer = 0
 	press(game, KEY_Q)
 	check(car.gear == 4, "Unsafe over-rev downshift is rejected")
 	press(game, KEY_M)
-	check(car.automatic_gears, "M restores automatic transmission")
-	press(game, KEY_M)
-	car.speed = 0
-	car.gear = 1
-	car.shift_timer = 0
-	press(game, KEY_Q)
-	check(car.gear == 0, "Neutral accessible when stopped")
-	car.shift_timer = 0
-	press(game, KEY_Q)
-	check(car.gear == -1, "Reverse accessible when stopped")
+	check(car.automatic_gears, "Legacy M cannot disable automatic")
+	var loaded_id: int = game.track.get_instance_id()
+	var began := Time.get_ticks_msec()
+	for key in game.tracks: game.preview_track(key)
+	check(game.track.get_instance_id() == loaded_id, "Nine preview selections never instantiate a circuit")
+	print("NINE PREVIEWS MS: ",Time.get_ticks_msec()-began)
+	game.preview_track("spa")
+	await game._request_race()
+	check(game.track.circuit_key == "spa" and game.state == game.State.COUNTDOWN, "Start loads selected circuit then starts countdown")
 	# Large dedicated floor isolates handling from track layout and obstacles.
 	var floor_body := StaticBody3D.new()
 	var collider := CollisionShape3D.new()
@@ -96,7 +100,7 @@ func run() -> void:
 	for i in 180:
 		await physics_frame
 		car.drive(1.0/60,1,0,0,false,false)
-	check(car.gear == 2 and car.speed>10, "Manual gear persists under acceleration")
+	check(car.gear == 2 and car.speed>4, "Manual gear persists under acceleration")
 	car.reset_at(Vector3(10000,0,10000),Vector3(0,0,1))
 	car.gear = 0
 	for i in 60:
@@ -112,6 +116,23 @@ func run() -> void:
 		await physics_frame
 		car.drive(1.0/60,0,1,0,false,false)
 	check(absf(car.speed)<.1, "Manual brake stops reverse without reaccelerating")
+	var launch_speeds: Array[float] = []
+	for launch_gear in [1, 6]:
+		car.automatic_gears = false
+		car.reset_at(Vector3(10000,0,10000),Vector3(0,0,1))
+		car.gear = launch_gear
+		for i in 180:
+			await physics_frame
+			car.drive(1.0/60,1,0,0,false,false)
+		launch_speeds.append(car.speed)
+	check(launch_speeds[1] < launch_speeds[0] * .3, "Sixth gear launch has much lower wheel torque than first")
+	print("LAUNCH SPEED first/sixth: ",launch_speeds)
+	car.automatic_gears = true
+	car.reset_at(Vector3(10000,0,10000),Vector3(0,0,1))
+	for i in 1200:
+		await physics_frame
+		car.drive(1.0/60,1,0,0,false,false)
+	check(car.gear >= 3 and car.speed > 30, "Automatic transmission accelerates through multiple gears")
 	game.queue_free()
 	floor_body.queue_free()
 	await process_frame

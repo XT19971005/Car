@@ -445,7 +445,7 @@ text = "前置八缸 · 稳定长轴距"
 
 [node name="Controls" type="Label" parent="Root/Menu/Columns/Vehicle"]
 layout_mode = 2
-text = "Q 降挡    E 升挡    M 自动换挡"
+text = "自动换挡    Q 手动降挡"
 theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.6, 0.65, 0.7, 1)
 

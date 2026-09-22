@@ -86,7 +86,8 @@ func reset_at(point: Vector3, direction: Vector3) -> void:
 	throttle = 0.0
 	brake = 0.0
 	rpm = 950.0
-	gear = 0 if automatic_gears else 1
+	gear = 1
+	downshift_hold = 0.0
 	shift_timer = 0.0
 	impact_feedback = 0.0
 	shift_feedback = 0.0
@@ -94,6 +95,14 @@ func reset_at(point: Vector3, direction: Vector3) -> void:
 	if body_visual:
 		body_visual.rotation = Vector3.ZERO
 	reset_physics_interpolation()
+
+var downshift_hold := 0.0
+
+func request_downshift() -> bool:
+	if gear <= 1: return false
+	if not shift_gear(-1): return false
+	downshift_hold = 2.0
+	return true
 
 func shift_gear(direction: int) -> bool:
 	if shift_timer > 0: return false
@@ -132,8 +141,10 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 		elif longitudinal < -0.2:
 			longitudinal = move_toward(longitudinal, 0.0, throttle * 18.0 * dt)
 		else:
-			var gear_limit := max_velocity if automatic_gears else 7800.0 * 2.05 / (60.0 * RATIOS[maxi(gear, 1)] * 3.4)
-			var drive_scale := 1.0 if automatic_gears else clampf(RATIOS[maxi(gear, 1)] / 2.12, .45, 1.12)
+			var gear_limit := 7800.0 * 2.05 / (60.0 * RATIOS[maxi(gear, 1)] * 3.4)
+			var drive_scale := clampf(RATIOS[maxi(gear, 1)] / RATIOS[1], .15, 1.0)
+			var coupled_rpm := absf(longitudinal) / 2.05 * 60.0 * RATIOS[maxi(gear, 1)] * 3.4
+			drive_scale *= lerpf(.25, 1.0, clampf(coupled_rpm / 2500.0, 0.0, 1.0)) if gear > 1 else 1.0
 			if shift_timer > 0: drive_scale *= .18
 			longitudinal = move_toward(longitudinal, minf(max_velocity, gear_limit), maxf(3.0, float(profile.acceleration) - longitudinal * 0.1) * throttle * drive_scale * dt)
 	else:
@@ -170,6 +181,7 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 	speed = Vector2(velocity.x, velocity.z).length() * (-1.0 if longitudinal < -0.1 else 1.0)
 	slip = absf(lateral)
 	shift_timer = maxf(0, shift_timer - dt)
+	downshift_hold = maxf(0, downshift_hold - dt)
 	shift_feedback = move_toward(shift_feedback, 0, dt * 7)
 	var old_gear := gear
 	var ratio := RATIOS
@@ -177,12 +189,12 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 		if speed < -0.3:
 			gear = -1
 		elif absf(speed) < 0.4 and throttle < 0.05:
-			gear = 0
+			gear = 1
 		else:
 			gear = maxi(gear, 1)
 			var predicted := absf(speed) / 2.05 * 60.0 * ratio[gear] * 3.4
 			if shift_timer <= 0:
-				if predicted > 7200 and gear < 6:
+				if predicted > 7200 and gear < 6 and (downshift_hold <= 0 or predicted > 7700):
 					gear += 1
 					shift_timer = 0.35
 				elif predicted < 2600 and gear > 1:
