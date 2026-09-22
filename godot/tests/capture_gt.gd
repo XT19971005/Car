@@ -32,6 +32,9 @@ func _run() -> void:
 		game.camera.look_at(p.point + Vector3.UP * .65)
 		game.camera.fov = 47
 		await shot("GODOT_" + pairing[0] + "_" + pairing[1])
+		game.camera.position = p.point - p.tangent * 6 + right * 3 + Vector3.UP * 3
+		game.camera.look_at(p.point + Vector3.UP * .65)
+		await shot("GODOT_" + pairing[0] + "_Rear")
 		game.camera.position = p.point - p.tangent * 130 - right * 120 + Vector3.UP * 90
 		game.camera.look_at(p.point + p.tangent * 75)
 		game.camera.fov = 65

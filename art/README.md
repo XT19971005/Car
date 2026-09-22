@@ -19,3 +19,8 @@ Blender 和 Godot 均 1 单位 = 1 米。三个原创设计的长/宽/高：V8 4
 engine_source.wav 来自 domasx2 的 CC0 赛车循环，engine_texture.wav 由 tools/build-audio.py 处理。运行时混合采样纹理、独立发动机脉冲、换挡/轮胎/碰撞/雨声，并根据驾驶舱视角滤波。三车音色不同，但不是三辆真实赛车独立录音。
 
 授权与网址见 ../godot/THIRD_PARTY_NOTICES.md。没有分发 ACC、DREDGE 或用户参考视频中的素材。
+
+
+## 三车结构精修（2026-09-22）
+`tools/blender/refine_vehicle.py` 与车辆构建脚本共同输出可编辑 .blend 和游戏 .glb。车身采用连续截面、实际轮拱开孔、灯槽和座舱空腔；窗框/密封条沿玻璃边缘建立，涂装属于车身面材质。轮胎使用独立圆形缩放，增加刹车盘与中心锁。GT、掀背和原型车保留不同轮廓与米制尺寸。正面、侧面和后方预览按车型同名保存。
+`tools/blender/audit_glazing.py` 检测座椅、束带、防滚架、仪表台与四块玻璃的实际网格交叉；异常会抛错。该检查不等于所有车身部件无任何交叉或真实车型复刻认证。

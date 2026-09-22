@@ -213,7 +213,7 @@ func _decorate() -> void:
 		_box(gantry + right * 10.0 * side + Vector3.UP * 3, Vector3(0.4, 6, 0.4), Color("273746"), yaw, true)
 	_box(gantry + Vector3.UP * 6.2, Vector3(20.5, 1.1, 0.5), Color("192532"), yaw)
 	var banner := Label3D.new()
-	banner.text = "APEX  /  CIRCUIT"
+	banner.text = "巅 峰 赛 道"
 	banner.font_size = 100
 	banner.pixel_size = 0.012
 	banner.position = gantry + Vector3.UP * 6.2 - t * 0.28

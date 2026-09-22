@@ -64,7 +64,7 @@ func _ready() -> void:
 	ui.populate_tracks(tracks)
 	ui.start_requested.connect(start_race)
 	ui.weather_selected.connect(_set_weather)
-	ui.find_child("WeatherChoice", true, false).select(["clear", "overcast", "rain"].find(weather_mode))
+	ui.find_child("WeatherChoice", true, false).select(preload("res://scripts/weather_controller.gd").KEYS.find(weather_mode))
 	ui.restart_requested.connect(start_race)
 	ui.track_selected.connect(select_track)
 	ui.pause_requested.connect(pause_race)
@@ -135,7 +135,7 @@ func _record_key() -> String:
 	return selected_track + ":" + selected_vehicle + ":" + weather_mode
 
 func _set_weather(key: String) -> void:
-	if key not in ["clear", "overcast", "rain"]: return
+	if key not in preload("res://scripts/weather_controller.gd").KEYS: return
 	weather_mode = key
 	weather.set_weather(key)
 	ui.select_track(selected_track, tracks[selected_track], track, best_time())
@@ -148,7 +148,7 @@ func select_vehicle(key: String) -> void:
 	selected_vehicle = key
 	car.configure_vehicle(key)
 	car.reset_at(track.points[0], track.tangent(0))
-	ui.vehicle_detail.text = "%s  /  %.3f m × %.3f m" % [car.profile.description, car.profile.length, car.profile.width]
+	ui.vehicle_detail.text = "%s  /  长 %.2f 米 · 宽 %.2f 米" % [car.profile.description, car.profile.length, car.profile.width]
 	ui.select_track(selected_track, tracks[selected_track], track, best_time())
 	_update_camera(1, true)
 
@@ -284,7 +284,7 @@ func _physics_process(dt: float) -> void:
 		if countdown <= 0:
 			state = State.RACING
 			go_timer = 0.7
-			ui.countdown_label.text = "GO"
+			ui.countdown_label.text = "出发"
 	elif state == State.RACING:
 		last_sample = track.sample(car.position)
 		var offroad: bool = float(last_sample.distance) > track.half_width + 0.85
@@ -345,7 +345,7 @@ func _update_hud() -> void:
 	var gate: Dictionary = track.at_progress(float(session.next_gate % Session.GATES) / Session.GATES)
 	gate_marker.position = gate.point
 	gate_marker.rotation.y = atan2(gate.tangent.x, gate.tangent.z)
-	var status := "检查点 %02d / %02d   ·   %.0f m" % [session.next_gate, Session.GATES, car.position.distance_to(gate.point)]
+	var status := "检查点 %02d / %02d   ·   %.0f 米" % [session.next_gate, Session.GATES, car.position.distance_to(gate.point)]
 	if car.velocity.dot(last_sample.tangent) < -2:
 		status = "逆向行驶 · 请沿赛道方向前进"
 	elif float(last_sample.distance) > track.half_width + 0.85:
@@ -366,9 +366,9 @@ func _process(dt: float) -> void:
 func _update_camera(dt: float, snap := false) -> void:
 	if front and front.visible:
 		showroom_car.rotation.y += dt * .12
-		camera.position = Vector3(10007.5, 2.6, 7.5)
-		camera.look_at(Vector3(10000.7, .6, 0))
-		camera.fov = 48
+		camera.position = Vector3(10006.8, 2.6, 6.8)
+		camera.look_at(Vector3(9998.8, .65, 1.2))
+		camera.fov = 44
 		if rear_display: rear_display.hide()
 		return
 	camera_time += dt
@@ -419,7 +419,7 @@ func _load_preferences() -> void:
 		camera_mode = clampi(int(preferences.get_value("settings", "camera", 2)), 0, 2)
 		reduced_motion = bool(preferences.get_value("settings", "reduced_motion", false))
 		weather_mode = str(preferences.get_value("settings", "weather", "clear"))
-		if weather_mode not in ["clear", "overcast", "rain"]: weather_mode = "clear"
+		if weather_mode not in preload("res://scripts/weather_controller.gd").KEYS: weather_mode = "clear"
 		var saved: Variant = preferences.get_value("records", "static_v3_weather", {})
 		if saved is Dictionary:
 			records = saved

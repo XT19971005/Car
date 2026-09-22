@@ -3,6 +3,9 @@
 [ext_resource type="Script" path="res://scripts/race_ui.gd" id="1_we8d1"]
 [ext_resource type="Script" path="res://scripts/track_map.gd" id="2_67s1c"]
 
+[ext_resource type="FontFile" path="res://assets/fonts/NotoSansSC-Regular.otf" id="FontRegular"]
+[ext_resource type="FontFile" path="res://assets/fonts/NotoSansSC-Bold.otf" id="FontBold"]
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ae6dh"]
 content_margin_left = 12.0
 content_margin_top = 12.0
@@ -101,11 +104,8 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
-[sub_resource type="SystemFont" id="SystemFont_iyedw"]
-font_names = PackedStringArray("Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", "sans-serif")
-
 [sub_resource type="Theme" id="Theme_wfr4q"]
-default_font = SubResource("SystemFont_iyedw")
+default_font = ExtResource("FontRegular")
 default_font_size = 18
 Button/styles/focus = SubResource("StyleBoxFlat_ae6dh")
 Button/styles/hover = SubResource("StyleBoxFlat_wl6cp")
@@ -177,7 +177,7 @@ content_margin_left = 30.0
 content_margin_top = 30.0
 content_margin_right = 30.0
 content_margin_bottom = 30.0
-bg_color = Color(0.0627451, 0.105882354, 0.15686275, 1)
+bg_color = Color(1, 1, 1, 1)
 corner_radius_top_left = 2
 corner_radius_top_right = 2
 corner_radius_bottom_right = 2
@@ -258,13 +258,13 @@ horizontal_scroll_mode = 0
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="@Label@11" type="Label" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10" unique_id=648719941]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 28
-text = "单人计时赛 / SINGLE PLAYER"
+text = "单人计时赛"
 
 [node name="@Button@12" type="Button" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10" unique_id=337387998]
 custom_minimum_size = Vector2(0, 44)
@@ -284,63 +284,63 @@ theme_override_constants/v_separation = 8
 columns = 3
 
 [node name="@Button@96" type="Button" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10/@GridContainer@14" unique_id=836326037]
-custom_minimum_size = Vector2(160, 54)
+custom_minimum_size = Vector2(160, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "蒙扎"
 metadata/track_key = "monza"
 
 [node name="@Button@97" type="Button" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10/@GridContainer@14" unique_id=2068266589]
-custom_minimum_size = Vector2(160, 54)
+custom_minimum_size = Vector2(160, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "斯帕"
 metadata/track_key = "spa"
 
 [node name="@Button@98" type="Button" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10/@GridContainer@14" unique_id=305965127]
-custom_minimum_size = Vector2(160, 54)
+custom_minimum_size = Vector2(160, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "银石"
 metadata/track_key = "silverstone"
 
 [node name="@Button@99" type="Button" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10/@GridContainer@14" unique_id=1241415131]
-custom_minimum_size = Vector2(160, 54)
+custom_minimum_size = Vector2(160, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "纽博格林 GP"
+text = "纽博格林"
 metadata/track_key = "nurburgring"
 
 [node name="@Button@100" type="Button" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10/@GridContainer@14" unique_id=816636677]
-custom_minimum_size = Vector2(160, 54)
+custom_minimum_size = Vector2(160, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "铃鹿"
 metadata/track_key = "suzuka"
 
 [node name="@Button@101" type="Button" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10/@GridContainer@14" unique_id=1964914902]
-custom_minimum_size = Vector2(160, 54)
+custom_minimum_size = Vector2(160, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "伊莫拉"
 metadata/track_key = "imola"
 
 [node name="@Button@102" type="Button" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10/@GridContainer@14" unique_id=1405386630]
-custom_minimum_size = Vector2(160, 54)
+custom_minimum_size = Vector2(160, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "红牛环"
 metadata/track_key = "redbull"
 
 [node name="@Button@103" type="Button" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10/@GridContainer@14" unique_id=1316960194]
-custom_minimum_size = Vector2(160, 54)
+custom_minimum_size = Vector2(160, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "巴瑟斯特"
 metadata/track_key = "bathurst"
 
 [node name="@Button@104" type="Button" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10/@GridContainer@14" unique_id=1891243365]
-custom_minimum_size = Vector2(160, 54)
+custom_minimum_size = Vector2(160, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "拉古纳·塞卡"
@@ -357,18 +357,19 @@ custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 selected = 0
 item_count = 3
-popup/item_0/text = "V8 MUSCLE GT"
+popup/item_0/text = "雷霆八缸跑车"
 popup/item_0/id = 0
-popup/item_1/text = "RALLY HATCH"
+popup/item_1/text = "疾风拉力车"
 popup/item_1/id = 1
-popup/item_2/text = "APEX PROTOTYPE"
+popup/item_2/text = "巅峰原型车"
 popup/item_2/id = 2
 
 [node name="VehicleDetail" type="Label" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10" unique_id=1106447791]
+autowrap_mode = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.63529414, 0.7058824, 0.7607843, 1)
 theme_override_font_sizes/font_size = 16
-text = "前置 V8 · 稳定长轴距"
+text = "前置八缸 · 稳定长轴距"
 
 [node name="@Label@28" type="Label" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10" unique_id=1795580690]
 layout_mode = 2
@@ -379,13 +380,15 @@ text = "03  比赛设置"
 [node name="WeatherChoice" type="OptionButton" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10" unique_id=1008655651]
 layout_mode = 2
 selected = 0
-item_count = 3
+item_count = 4
 popup/item_0/text = "晴天 · 午后"
 popup/item_0/id = 0
 popup/item_1/text = "阴天 · 柔光"
 popup/item_1/id = 1
 popup/item_2/text = "雨天 · 湿地"
 popup/item_2/id = 2
+popup/item_3/text = "晴天 · 日落"
+popup/item_3/id = 3
 
 [node name="@HBoxContainer@40" type="HBoxContainer" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@ScrollContainer@9/@VBoxContainer@10" unique_id=1972843207]
 layout_mode = 2
@@ -452,20 +455,22 @@ autowrap_mode = 3
 [node name="@VBoxContainer@62" type="VBoxContainer" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6" unique_id=1339789157]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="@Label@63" type="Label" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@VBoxContainer@62" unique_id=339975672]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.13, 0.20, 1)
 theme_override_font_sizes/font_size = 16
-text = "赛道 / CIRCUIT BRIEFING"
+text = "赛道信息"
 
 [node name="TrackTitle" type="Label" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@VBoxContainer@62" unique_id=1099567876]
+theme_override_fonts/font = ExtResource("FontBold")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 30
 
 [node name="TrackDetail" type="Label" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@VBoxContainer@62" unique_id=790246815]
+autowrap_mode = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.63529414, 0.7058824, 0.7607843, 1)
 theme_override_font_sizes/font_size = 17
@@ -489,15 +494,16 @@ theme_override_font_sizes/font_size = 19
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 18
-text = "GT EXPERIENCE  /  自动变速 · 辅助抓地"
+text = "驾驶辅助 · 自动换挡 · 抓地辅助"
 
 [node name="@Label@70" type="Label" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@VBoxContainer@62" unique_id=1614993053]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.63529414, 0.7058824, 0.7607843, 1)
 theme_override_font_sizes/font_size = 12
-text = "地图 © OpenStreetMap contributors · ODbL"
+text = "地图 © OpenStreetMap 贡献者 · ODbL"
 
 [node name="@Label@71" type="Label" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@VBoxContainer@62" unique_id=47945511]
+autowrap_mode = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.63529414, 0.7058824, 0.7607843, 1)
 theme_override_font_sizes/font_size = 15
@@ -505,10 +511,11 @@ text = "完成所有检查点即可计圈。
 驶离路面或使用复位，本圈不计最佳成绩。"
 
 [node name="StartButton" type="Button" parent="Root/Menu/@MarginContainer@5/@HBoxContainer@6/@VBoxContainer@62" unique_id=203292996]
+theme_override_fonts/font = ExtResource("FontBold")
 custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.0627451, 0.105882354, 0.15686275, 1)
-theme_override_colors/font_focus_color = Color(0.0627451, 0.105882354, 0.15686275, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_hwy7h")
 text = "开始比赛   →"
 
@@ -536,6 +543,7 @@ theme_override_colors/font_color = Color(0.92, 0.13, 0.20, 1)
 theme_override_font_sizes/font_size = 18
 
 [node name="TimerLabel" type="Label" parent="Root/Hud/@PanelContainer@73/@VBoxContainer@74" unique_id=1810018730]
+theme_override_fonts/font = ExtResource("FontBold")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 32
@@ -547,54 +555,55 @@ theme_override_colors/font_color = Color(0.63529414, 0.7058824, 0.7607843, 1)
 theme_override_font_sizes/font_size = 16
 
 [node name="ProgressBar" type="ProgressBar" parent="Root/Hud/@PanelContainer@73/@VBoxContainer@74" unique_id=2086636320]
-custom_minimum_size = Vector2(260, 6)
+custom_minimum_size = Vector2(224, 6)
 layout_mode = 2
 max_value = 1.0
 show_percentage = false
 
 [node name="@PanelContainer@79" type="PanelContainer" parent="Root/Hud" unique_id=1534474650]
-custom_minimum_size = Vector2(220, 180)
+custom_minimum_size = Vector2(184, 148)
 layout_mode = 0
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -245.0
+offset_left = -209.0
 offset_top = 24.0
 offset_right = -25.0
-offset_bottom = 204.0
+offset_bottom = 172.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_xyo5p")
 
 [node name="Minimap" type="Control" parent="Root/Hud/@PanelContainer@79" unique_id=1746513543]
-custom_minimum_size = Vector2(200, 164)
+custom_minimum_size = Vector2(164, 132)
 layout_mode = 2
 script = ExtResource("2_67s1c")
 
 [node name="@PanelContainer@81" type="PanelContainer" parent="Root/Hud" unique_id=1077632108]
-custom_minimum_size = Vector2(270, 160)
+custom_minimum_size = Vector2(220, 125)
 layout_mode = 0
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -295.0
-offset_top = -205.0
+offset_left = -244.0
+offset_top = -150.0
 offset_right = -25.0
-offset_bottom = -45.0
+offset_bottom = -25.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_6s1gn")
 
 [node name="@VBoxContainer@82" type="VBoxContainer" parent="Root/Hud/@PanelContainer@81" unique_id=817411282]
 layout_mode = 2
 
 [node name="SpeedLabel" type="Label" parent="Root/Hud/@PanelContainer@81/@VBoxContainer@82" unique_id=235677262]
+theme_override_fonts/font = ExtResource("FontBold")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 54
+theme_override_font_sizes/font_size = 44
 text = "000"
 
 [node name="GearLabel" type="Label" parent="Root/Hud/@PanelContainer@81/@VBoxContainer@82" unique_id=983153274]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.13, 0.20, 1)
 theme_override_font_sizes/font_size = 18
-text = "N   /   KM/H"
+text = "空挡 · 公里/时"
 
 [node name="RpmBar" type="ProgressBar" parent="Root/Hud/@PanelContainer@81/@VBoxContainer@82" unique_id=2111148629]
 custom_minimum_size = Vector2(0, 8)
@@ -608,7 +617,8 @@ anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 28.0
 offset_top = -110.0
-offset_right = 900.0
+offset_right = 850.0
+autowrap_mode = 2
 offset_bottom = -80.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 18
@@ -671,4 +681,4 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_e36ec")
 
 [node name="ModalStack" type="VBoxContainer" parent="Root/Modal/@CenterContainer@93/@PanelContainer@94" unique_id=558232531]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8

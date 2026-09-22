@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/front_end.gd" id="1"]
-[sub_resource type="SystemFont" id="Font"]
-font_names = PackedStringArray("Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC")
+[ext_resource type="FontFile" path="res://assets/fonts/NotoSansSC-Regular.otf" id="FontRegular"]
+[ext_resource type="FontFile" path="res://assets/fonts/NotoSansSC-Bold.otf" id="FontBold"]
+
 [sub_resource type="StyleBoxFlat" id="Button"]
 bg_color = Color(0.065, 0.09, 0.11, 0.92)
 border_width_bottom = 1
@@ -20,8 +21,10 @@ content_margin_right = 20.0
 content_margin_top = 12.0
 content_margin_bottom = 12.0
 [sub_resource type="Theme" id="Theme"]
-default_font = SubResource("Font")
+default_font = ExtResource("FontRegular")
 default_font_size = 20
+Button/fonts/font = ExtResource("FontBold")
+Button/font_sizes/font_size = 19
 Button/styles/normal = SubResource("Button")
 Button/styles/hover = SubResource("Hover")
 Button/styles/focus = SubResource("Hover")
@@ -57,25 +60,33 @@ theme_override_constants/margin_bottom = 24
 
 [node name="Stack" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 16
 
 [node name="Eyebrow" type="Label" parent="Margin/Stack"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.16, 0.20, 1)
-theme_override_font_sizes/font_size = 13
-text = "DRIVER HEADQUARTERS"
+theme_override_font_sizes/font_size = 16
+text = "车手中心"
 
 [node name="Title" type="Label" parent="Margin/Stack"]
+theme_override_fonts/font = ExtResource("FontBold")
 layout_mode = 2
-theme_override_font_sizes/font_size = 44
-text = "APEX\nCIRCUIT"
+theme_override_font_sizes/font_size = 48
+text = "巅峰赛道"
+
+[node name="BrandLine" type="ColorRect" parent="Margin/Stack"]
+layout_mode = 2
+custom_minimum_size = Vector2(64, 3)
+size_flags_horizontal = 0
+color = Color(0.92, 0.13, 0.20, 1)
+mouse_filter = 2
 
 [node name="Subtitle" type="Label" parent="Margin/Stack"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.67, 0.75, 0.77, 1)
-text = "属于你的下一圈。"
+text = "专注驾驶，突破下一圈。"
 
 [node name="Spacer" type="Control" parent="Margin/Stack"]
 layout_mode = 2
@@ -111,15 +122,15 @@ theme_override_constants/separation = 8
 [node name="V8" type="Button" parent="Margin/Stack/GaragePanel"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "01   MUSCLE GT"
+text = "01   雷霆八缸跑车"
 [node name="Rally" type="Button" parent="Margin/Stack/GaragePanel"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "02   RALLY HATCH"
+text = "02   疾风拉力车"
 [node name="Prototype" type="Button" parent="Margin/Stack/GaragePanel"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "03   PROTOTYPE"
+text = "03   巅峰原型车"
 [node name="Continue" type="Button" parent="Margin/Stack/GaragePanel"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -132,9 +143,9 @@ text = "←  返回首页"
 
 [node name="Edition" type="Label" parent="Margin/Stack"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.5, 0.6, 0.64, 1)
-text = "09 CIRCUITS  /  03 MACHINES"
+text = "9 条赛道 · 3 款赛车"
 
 [node name="CarInfo" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -148,16 +159,18 @@ offset_bottom = -22.0
 grow_vertical = 0
 
 [node name="CarName" type="Label" parent="CarInfo"]
+theme_override_fonts/font = ExtResource("FontBold")
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "V8 MUSCLE GT"
+theme_override_font_sizes/font_size = 26
+text = "雷霆八缸跑车"
 [node name="CarDetail" type="Label" parent="CarInfo"]
+autowrap_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.76, 0.8, 0.82, 1)
-text = "长车头 GT · 稳定与扭矩"
+text = "长车头跑车 · 稳定操控与充沛扭矩"
 
 [node name="TilesMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -165,7 +178,7 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 32.0
-offset_top = -150.0
+offset_top = -125.0
 offset_right = -32.0
 offset_bottom = -28.0
 grow_vertical = 0
@@ -177,34 +190,35 @@ theme_override_constants/separation = 8
 [node name="Race" type="Button" parent="TilesMargin/Navigation"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "单人计时赛  →\nSINGLE PLAYER"
+text = "开始计时赛  →"
+size_flags_stretch_ratio = 1.35
 alignment = 0
 size_flags_horizontal = 3
-custom_minimum_size = Vector2(0, 112)
+custom_minimum_size = Vector2(0, 92)
 
 [node name="Garage" type="Button" parent="TilesMargin/Navigation"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "我的车库\nGARAGE"
+text = "我的车库"
 alignment = 0
 size_flags_horizontal = 3
-custom_minimum_size = Vector2(0, 112)
+custom_minimum_size = Vector2(0, 92)
 
 [node name="Settings" type="Button" parent="TilesMargin/Navigation"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "游戏设置\nOPTIONS"
+text = "游戏设置"
 alignment = 0
 size_flags_horizontal = 3
-custom_minimum_size = Vector2(0, 112)
+custom_minimum_size = Vector2(0, 92)
 
 [node name="Quit" type="Button" parent="TilesMargin/Navigation"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "退出游戏\nEXIT"
+text = "退出游戏"
 alignment = 0
 size_flags_horizontal = 3
-custom_minimum_size = Vector2(0, 112)
+custom_minimum_size = Vector2(0, 92)
 
 
 [node name="TopNavigation" type="HBoxContainer" parent="."]

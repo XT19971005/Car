@@ -70,12 +70,13 @@ func configure_vehicle(key: String) -> void:
 	steering_wheel = model.find_child("steering_wheel", true, false)
 	var screen := model.find_child("dash_display", true, false) as Node3D
 	dashboard = Label3D.new()
-	dashboard.font_size = 50
+	dashboard.font_size = 40
+	dashboard.font = preload("res://assets/fonts/NotoSansSC-Regular.otf")
 	dashboard.pixel_size = .00075
 	dashboard.rotation.y = PI
 	dashboard.modulate = Color("9fffcf")
 	dashboard.outline_size = 0
-	dashboard.text = "N   000\nRPM 0950"
+	dashboard.text = "空挡  000\n转速 0950"
 	screen.add_child(dashboard)
 
 func reset_at(point: Vector3, direction: Vector3) -> void:
@@ -187,7 +188,7 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 	if steering_wheel:
 		steering_wheel.rotation.z = -steering * 1.8
 	if dashboard:
-		dashboard.text = "%s   %03d\nRPM %04d" % ["R" if gear < 0 else "N" if gear == 0 else str(gear), roundi(absf(speed) * 3.6), roundi(rpm)]
+		dashboard.text = "%s  %03d\n转速 %04d" % ["倒挡" if gear < 0 else "空挡" if gear == 0 else str(gear) + "挡", roundi(absf(speed) * 3.6), roundi(rpm)]
 
 func is_on_floor_direction(forward: Vector3) -> float:
 	var normal := get_floor_normal()

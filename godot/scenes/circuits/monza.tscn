@@ -5131,7 +5131,7 @@ mesh = SubResource("BoxMesh_y2i7k")
 [node name="@Label3D@32" type="Label3D" parent="." unique_id=1285781034]
 transform = Transform3D(0.99464595, 0, -0.10334112, 0, 1, 0, 0.10334112, 0, 0.99464595, -439.831, 11.77634, 690.7441)
 pixel_size = 0.012
-text = "APEX  /  CIRCUIT"
+text = "巅 峰 赛 道"
 font_size = 100
 
 [node name="@Node3D@33" type="Node3D" parent="." unique_id=1005851415]

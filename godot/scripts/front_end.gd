@@ -9,6 +9,7 @@ const CARS = preload("res://scripts/car_catalog.gd").CARS
 var current_car := "v8"
 
 func _ready() -> void:
+	DisplayServer.window_set_title("巅峰赛道")
 	%Race.pressed.connect(func(): race_requested.emit())
 	%Garage.pressed.connect(func(): open_page("garage"))
 	%Settings.pressed.connect(func(): open_page("settings"))
@@ -30,22 +31,25 @@ func select_car(key: String) -> void:
 	current_car = key
 	var data: Dictionary = CARS[key]
 	%CarName.text = data.name
-	%CarDetail.text = data.description + "\n极速 %.0f km/h  ·  车长 %.2f m" % [float(data.top_speed) * 3.6, data.length]
+	%CarDetail.text = data.description + "\n极速 %.0f 公里/时  ·  车长 %.2f 米" % [float(data.top_speed) * 3.6, data.length]
 	car_selected.emit(key)
 	for pair in [[%V8, "v8"], [%Rally, "r6"], [%Prototype, "v6"]]:
 		pair[0].modulate = Color.WHITE
 		if pair[1] == key and %GaragePanel.visible: pair[0].grab_focus()
 
 func open_page(page: String) -> void:
+	for pair in [[$TopNavigation/HomeTab, "home"], [$TopNavigation/GarageTab, "garage"], [$TopNavigation/OptionsTab, "settings"]]:
+		pair[0].modulate = Color.WHITE if pair[1] == page else Color("82929e")
+	$Margin/Stack/Subtitle.text = {"home": "专注驾驶，突破下一圈。", "garage": "选择适合你的驾驶风格。", "settings": "找到舒服的驾驶状态。"}[page]
 	$TilesMargin.visible = page == "home"
 	$LeftShade.visible = page != "home"
 	$Margin/Stack/Edition.visible = page != "home"
-	$Margin/Stack/Title.text = "APEX\nCIRCUIT" if page == "home" else "车库" if page == "garage" else "设置"
-	$CarInfo.offset_top = -255 if page == "home" else -135
-	$CarInfo.offset_bottom = -155 if page == "home" else -22
+	$Margin/Stack/Title.text = "巅峰赛道" if page == "home" else "车库" if page == "garage" else "设置"
+	$CarInfo.offset_top = -230 if page == "home" else -135
+	$CarInfo.offset_bottom = -130 if page == "home" else -22
 	%Navigation.visible = page == "home"
 	%SettingsPanel.visible = page == "settings"
 	%GaragePanel.visible = page == "garage"
 	%Back.visible = page != "home"
-	%Eyebrow.text = "DRIVER HEADQUARTERS" if page == "home" else "YOUR COLLECTION" if page == "garage" else "DRIVING PREFERENCES"
+	%Eyebrow.text = "车手中心" if page == "home" else "我的收藏" if page == "garage" else "驾驶偏好"
 	(%Race if page == "home" else {"v8": %V8, "r6": %Rally, "v6": %Prototype}[current_car] if page == "garage" else %Volume).grab_focus()

@@ -26,6 +26,12 @@ func run() -> void:
 	check(game.best_time() == 0, "Dry records are separate from wet records")
 	game._set_weather("rain")
 	check(game.best_time() == 123.0, "Changing weather restores its own record")
+	choice.select(3)
+	choice.item_selected.emit(3)
+	check(game.weather.mode == "sunset" and not game.weather.rain.emitting and game.weather.sun.rotation_degrees.x > -15, "Sunset selection changes sky and light without wet physics")
+	choice.select(2)
+	choice.item_selected.emit(2)
+	check(game.weather.sun.rotation_degrees.x < -20, "Leaving sunset restores weather sun angle")
 	game.ui.start_button.pressed.emit()
 	game.state = game.State.RACING
 	var route: Dictionary = game.track.at_progress(.42)

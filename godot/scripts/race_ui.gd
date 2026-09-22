@@ -64,7 +64,7 @@ func _ready() -> void:
 	vehicle_choice.item_selected.connect(func(index: int): vehicle_selected.emit(vehicle_choice.get_item_metadata(index)))
 	var weather_choice := find_child("WeatherChoice", true, false) as OptionButton
 	for i in weather_choice.item_count:
-		weather_choice.set_item_metadata(i, ["clear", "overcast", "rain"][i])
+		weather_choice.set_item_metadata(i, preload("res://scripts/weather_controller.gd").KEYS[i])
 	weather_choice.item_selected.connect(func(index: int): weather_selected.emit(weather_choice.get_item_metadata(index)))
 	for item in root.find_children("*", "Button", true, false):
 		if item.text.begins_with("←"): item.pressed.connect(func(): home_requested.emit())
@@ -110,7 +110,7 @@ func populate_tracks(catalog: Dictionary) -> void:
 
 func select_track(key: String, data: Dictionary, world: Node3D, best: float) -> void:
 	track_title.text = data.name
-	track_detail.text = "%s  /  %.3f km · 米制场景" % [data.region, world.length / 1000.0]
+	track_detail.text = "%s  /  全长 %.3f 公里" % [data.region, world.length / 1000.0]
 	track_best.text = "个人最佳   " + Session.time_text(best)
 	preview.configure(world.points)
 	preview.driver = Vector2(world.points[0].x, world.points[0].z)
@@ -161,7 +161,7 @@ func show_race() -> void:
 
 func update_hud(car: CharacterBody3D, session: RefCounted, progress: float, personal_best: float, status: String) -> void:
 	speed_label.text = "%03d" % int(absf(car.speed) * 3.6)
-	gear_label.text = "%s   /   KM/H" % ("R" if car.gear < 0 else ("N" if car.gear == 0 else str(car.gear)))
+	gear_label.text = "%s · 公里/时" % ("倒挡" if car.gear < 0 else ("空挡" if car.gear == 0 else str(car.gear) + " 挡"))
 	rpm_bar.value = car.rpm
 	lap_label.text = "计时赛   /   第 %d / %d 圈" % [session.lap, session.target_laps]
 	timer_label.text = Session.time_text(session.lap_time) if session.lap_time > 0 else "00:00.000"

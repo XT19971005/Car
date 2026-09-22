@@ -14,6 +14,8 @@ func run() -> void:
 		game.front.select_car(key)
 		print("FRONT LABEL ", game.front.get_node("Margin/Stack/Title").text, " visible=",game.front.get_node("Margin/Stack/Title").is_visible_in_tree())
 		await shot("GARAGE_" + key)
+	game.front.open_page("settings")
+	await shot("SETTINGS_Chinese")
 	game.show_menu()
 	await shot("MENU_NineCircuits")
 	for key in ["clear", "overcast", "rain"]:
@@ -33,6 +35,12 @@ func run() -> void:
 	await shot("HOME_960x540")
 	game.front.open_page("garage")
 	await shot("GARAGE_960x540")
+	game.show_menu()
+	await shot("SETUP_960x540")
+	game.front.open_page("settings")
+	game.show_home()
+	game.front.open_page("settings")
+	await shot("SETTINGS_960x540")
 	game.queue_free()
 	await process_frame
 	print("OVERHAUL CAPTURE COMPLETE")

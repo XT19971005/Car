@@ -215,6 +215,8 @@ if variant == 'v6':
 elif variant == 'r6':
     bpy.data.objects['cockpit_camera'].location=(.36,.10,1.40)
     bpy.data.objects['steering_wheel'].location.z+=.19
+exec(compile((Path(__file__).with_name("refine_vehicle.py")).read_text(encoding="utf-8"), "refine_vehicle.py", "exec"))
+
 # Normalize each original design to its metre dimensions; preserve axle spacing.
 bpy.context.view_layer.update()
 verts_world=[o.matrix_world@v.co for o in bpy.context.scene.objects if o.type=='MESH' for v in o.data.vertices]
@@ -227,22 +229,45 @@ for o in list(bpy.context.scene.objects):
     o.scale.x*=sx;o.scale.y*=sy;o.scale.z*=sz
     if o.name.startswith('wheel_'):
         o.location.y=(-1 if 'front' in o.name else 1)*spec['wheelbase']/2
+        wheel_radius=.315 if variant=='r6' else .335
+        o.scale.y=wheel_radius/.34;o.scale.z=wheel_radius/.34
+        o.location.z=wheel_radius+.012
     if o.name.startswith('Wheelarch'):
         o.location.y=(-1 if o.location.y<0 else 1)*spec['wheelbase']/2
 # Cut real wheel wells after the wheelbase is finalized; avoid tyres intersecting a solid body.
 bpy.context.view_layer.update()
 body=bpy.data.objects.get('GT_sculpted_body')
+if variant=='v6':
+    # Closed sculpted fenders retain clearance over full-size circular tyres.
+    inv=body.matrix_world.inverted()
+    for vertex in body.data.vertices:
+        p=body.matrix_world@vertex.co
+        distance=min(abs(p.y-spec['wheelbase']/2),abs(p.y+spec['wheelbase']/2))
+        blend=max(0,1-(distance/.72)**4)*max(0,min(1,(abs(p.x)-.30)/.25))
+        if p.z>.32:p.z+=max(0,.80-p.z)*blend
+        vertex.co=inv@p
+    # Re-open the lamp pockets after sculpting the fender mesh.
+    for lamp_obj in [o for o in bpy.context.scene.objects if o.name.startswith('Inset_tail_housing')]:
+        center=lamp_obj.matrix_world.translation
+        cutter=box('Final_tail_socket',center,(.50,.28,.10),dark,.014)
+        subtract(body,cutter)
 for pivot in [o for o in bpy.context.scene.objects if o.name.startswith('wheel_')]:
     center=pivot.matrix_world.translation.copy()
-    bpy.ops.mesh.primitive_cylinder_add(vertices=32,radius=.397,depth=.76,location=center,rotation=(0,math.pi/2,0))
+    bpy.ops.mesh.primitive_cylinder_add(vertices=32,radius=(.315 if variant=='r6' else .335)+.036,depth=.76,location=center,rotation=(0,math.pi/2,0))
     cutter=bpy.context.object;cutter.name='Wheelwell_cut_tool'
-    cutter.scale=(sz,sy,sx)
+    cutter.scale=(1,1,1)
     bpy.context.view_layer.objects.active=cutter
     bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
     mod=body.modifiers.new('Actual_wheel_well','BOOLEAN');mod.operation='DIFFERENCE';mod.solver='EXACT';mod.object=cutter
     bpy.context.view_layer.objects.active=body
     bpy.ops.object.modifier_apply(modifier=mod.name)
     bpy.data.objects.remove(cutter,do_unlink=True)
+# Small real body fillets and stable normals unify the connected shell.
+bpy.context.view_layer.objects.active=body
+mod=body.modifiers.new('Body_edge_fillets','BEVEL');mod.width=.010;mod.segments=3;mod.limit_method='ANGLE'
+bpy.ops.object.modifier_apply(modifier=mod.name)
+mod=body.modifiers.new('Body_weighted_normals','WEIGHTED_NORMAL');mod.keep_sharp=True
+bpy.ops.object.modifier_apply(modifier=mod.name)
 # Pivot positions determine runtime camera and live dashboard placement.
 bpy.context.view_layer.update()
 metadata={name:list(bpy.data.objects[name].location) for name in ['cockpit_camera','dash_display','mirror_display']}
@@ -265,4 +290,8 @@ camera=bpy.context.object;camera.rotation_euler=(Vector((0,0,.7))-camera.locatio
 scene.camera=camera;scene.render.resolution_x=1400;scene.render.resolution_y=950;scene.render.resolution_percentage=100
 scene.view_settings.view_transform='AgX';scene.render.filepath=str(ROOT/('art/previews/'+spec['asset']+'.png'))
 bpy.ops.render.render(write_still=True)
+for suffix,location in [('Rear',(5,8,4)),('Side',(8,0,2.4))]:
+    camera.location=location;camera.rotation_euler=(Vector((0,0,.7))-camera.location).to_track_quat('-Z','Y').to_euler()
+    scene.render.filepath=str(ROOT/('art/previews/'+spec['asset']+'_'+suffix+'.png'))
+    bpy.ops.render.render(write_still=True)
 print('GT BUILD COMPLETE')

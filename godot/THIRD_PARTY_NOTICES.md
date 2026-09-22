@@ -34,3 +34,7 @@ Racing car engine sound loops by domasx2: https://opengameart.org/content/racing
 Source file: https://opengameart.org/sites/default/files/loop_0.wav
 License: CC0 1.0, https://creativecommons.org/publicdomain/zero/1.0/
 The author describes a remix of a public-domain recording. engine_source.wav preserves the downloaded loop; engine_texture.wav removes DC, crossfades the seam and normalizes amplitude. tools/build-audio.py reproduces this processing.
+
+
+## 中文字体
+Noto Sans SC Regular / Bold，Copyright Adobe，SIL Open Font License 1.1。字体随游戏嵌入，完整许可位于 assets/fonts/OFL.txt。官方来源：https://github.com/google/fonts/tree/main/ofl/notosanssc 。

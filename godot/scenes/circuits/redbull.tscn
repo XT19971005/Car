@@ -4371,7 +4371,7 @@ mesh = SubResource("BoxMesh_gbesk")
 [node name="@Label3D@19069" type="Label3D" parent="." unique_id=1606932523]
 transform = Transform3D(-0.25829428, 0, 0.9660663, 0, 1, 0, -0.9660663, 0, -0.25829428, 213.54219, 6.184712, 383.38214)
 pixel_size = 0.012
-text = "APEX  /  CIRCUIT"
+text = "巅 峰 赛 道"
 font_size = 100
 
 [node name="@Node3D@19070" type="Node3D" parent="." unique_id=466706458]
