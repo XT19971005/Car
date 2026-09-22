@@ -136,15 +136,15 @@ func run() -> void:
 	for key in ["v8", "r6", "v6"]:
 		car.configure_vehicle(key)
 		car.reset_at(Vector3(10000,0,10000),Vector3(0,0,1))
-		for i in 8:
+		for i in 4:
 			await physics_frame
 			car.drive(1.0/60,0,0,1,false,false)
-		check(car.steering > .99, "Full keyboard steering within 134ms " + key)
+		check(car.steering > .99, "Full keyboard steering within 67ms " + key)
 		check(not car.steering_wheel.basis.is_equal_approx(car.steering_wheel_rest), "Steering wheel visibly rotates " + key)
-		for i in 16:
+		for i in 6:
 			await physics_frame
 			car.drive(1.0/60,0,0,-1,false,false)
-		check(car.steering < -.99, "Direction reversal within 267ms " + key)
+		check(car.steering < -.99, "Direction reversal within 100ms " + key)
 		car.reset_at(Vector3(10000,0,10000),Vector3(0,0,1))
 		check(car.steering_wheel.basis.is_equal_approx(car.steering_wheel_rest), "Reset recentres wheel " + key)
 	var launch_speeds: Array[float] = []

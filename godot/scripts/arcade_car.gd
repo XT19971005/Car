@@ -137,8 +137,12 @@ func shift_gear(direction: int) -> bool:
 	shift_feedback = 1.0
 	return true
 
+func steering_angle_at_speed(forward_speed: float) -> float:
+	return .62 / (1.0 + pow(absf(forward_speed) / 28.0, 2.0))
+
 func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool, offroad: bool) -> void:
-	steering = move_toward(steering, turn, dt * (9.0 if absf(turn) > 0.05 else 12.0))
+	var steering_response := 22.0 if absf(turn) <= .05 else 26.0 if steering * turn < 0 else 18.0
+	steering = move_toward(steering, turn, dt * steering_response)
 	throttle = move_toward(throttle, gas, dt * 2.8)
 	brake = move_toward(brake, stopping, dt * 6.0)
 	var forward := Vector3(sin(heading), 0, cos(heading))
@@ -179,12 +183,14 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 		longitudinal = move_toward(longitudinal, signf(longitudinal) * max_velocity, dt * 12.0)
 	if handbrake:
 		longitudinal = move_toward(longitudinal, 0.0, dt * 9.0)
-	var steering_angle := .55 / (1.0 + pow(absf(longitudinal) / 22.0, 2.0))
+	var steering_angle := steering_angle_at_speed(longitudinal)
 	# Model forward is +Z; a driver's right turn rotates toward -X.
 	var desired_yaw := -steering * longitudinal / float(profile.wheelbase) * tan(steering_angle)
-	var yaw_limit := minf(1.5, grip * 1.65 * (1.0 - brake * .20) / maxf(absf(longitudinal), 3.0))
+	# More corner authority at road speeds, retaining the high-speed stability cap.
+	var corner_authority := lerpf(2.05, 1.65, smoothstep(30.0, 60.0, absf(longitudinal)))
+	var yaw_limit := minf(1.8, grip * corner_authority * (1.0 - brake * .20) / maxf(absf(longitudinal), 3.0))
 	desired_yaw = clampf(desired_yaw, -yaw_limit, yaw_limit)
-	yaw_rate = lerpf(yaw_rate, desired_yaw, 1.0 - exp(-dt * (18.0 if not offroad else 9.0)))
+	yaw_rate = lerpf(yaw_rate, desired_yaw, 1.0 - exp(-dt * (32.0 if not offroad else 12.0)))
 	heading += yaw_rate * dt
 	# Resolve tyre forces in the updated vehicle frame, then damp sideslip.
 	var momentum := forward * longitudinal + right * lateral

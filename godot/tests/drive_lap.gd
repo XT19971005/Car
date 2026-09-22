@@ -37,7 +37,7 @@ func _run() -> void:
 			var corner_speed := sqrt(float(car.profile.grip)*.95/maxf(curvature,.001))
 			target_speed = minf(target_speed,sqrt(corner_speed*corner_speed+2.0*10.0*maxf(distance-12.0,0.0)))
 		var look_distance := maxf(Vector2(target.x,target.z).length(),1.0)
-		var angle := .55/(1.0+pow(absf(car.speed)/22.0,2.0))
+		var angle: float = car.steering_angle_at_speed(car.speed)
 		var turn := -atan(2.0*float(car.profile.wheelbase)*sin(error)/look_distance)/angle
 		car.drive(1.0/60,1.0 if car.speed<target_speed else 0.0,.8 if car.speed>target_speed+.5 else 0.0,clampf(turn,-1,1),false,float(sample.distance)>game.track.half_width+.85)
 		stalled = stalled + 1 if step > 120 and absf(car.speed) < 1.5 else 0
