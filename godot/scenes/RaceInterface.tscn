@@ -1,0 +1,777 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/race_ui.gd" id="1_we8d1"]
+[ext_resource type="Script" path="res://scripts/track_map.gd" id="2_67s1c"]
+
+[ext_resource type="FontFile" path="res://assets/fonts/NotoSansSC-Regular.otf" id="FontRegular"]
+[ext_resource type="FontFile" path="res://assets/fonts/NotoSansSC-Bold.otf" id="FontBold"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ae6dh"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.92, 0.13, 0.20, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wl6cp"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.21, 0.22, 0.24, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rotk3"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.085, 0.095, 0.11, 0.97)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ntt8v"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.62, 0.055, 0.085, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bodxn"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.92, 0.13, 0.20, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nemiv"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.21, 0.22, 0.24, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_swet8"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.085, 0.095, 0.11, 0.97)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mqsow"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.62, 0.055, 0.085, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="Theme" id="Theme_wfr4q"]
+default_font = ExtResource("FontRegular")
+default_font_size = 18
+Button/styles/focus = SubResource("StyleBoxFlat_ae6dh")
+Button/styles/hover = SubResource("StyleBoxFlat_wl6cp")
+Button/styles/normal = SubResource("StyleBoxFlat_rotk3")
+Button/styles/pressed = SubResource("StyleBoxFlat_ntt8v")
+Label/colors/font_color = Color(0.9411765, 0.95686275, 0.96862745, 1)
+OptionButton/styles/focus = SubResource("StyleBoxFlat_bodxn")
+OptionButton/styles/hover = SubResource("StyleBoxFlat_nemiv")
+OptionButton/styles/normal = SubResource("StyleBoxFlat_swet8")
+OptionButton/styles/pressed = SubResource("StyleBoxFlat_mqsow")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hwy7h"]
+content_margin_left = 14.0
+content_margin_top = 14.0
+content_margin_right = 14.0
+content_margin_bottom = 14.0
+bg_color = Color(0.92, 0.13, 0.20, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jy6e7"]
+border_width_top = 2
+border_width_bottom = 1
+border_color = Color(0.28, 0.34, 0.40, 0.8)
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.028, 0.04, 0.056, 0.94)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ir4t5"]
+border_color = Color(0.28, 0.34, 0.40, 0.8)
+content_margin_left = 16.0
+content_margin_top = 16.0
+content_margin_right = 16.0
+content_margin_bottom = 16.0
+bg_color = Color(0, 0, 0, 0)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xyo5p"]
+border_color = Color(0.28, 0.34, 0.40, 0.8)
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0, 0, 0, 0)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6s1gn"]
+border_color = Color(0.92, 0.13, 0.20, 1)
+content_margin_left = 16.0
+content_margin_top = 16.0
+content_margin_right = 16.0
+content_margin_bottom = 16.0
+bg_color = Color(0, 0, 0, 0)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_e36ec"]
+border_width_top = 2
+border_width_bottom = 1
+border_color = Color(0.92, 0.13, 0.20, 1)
+content_margin_left = 30.0
+content_margin_top = 30.0
+content_margin_right = 30.0
+content_margin_bottom = 30.0
+bg_color = Color(0.028, 0.04, 0.056, 0.94)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxEmpty" id="ClearHudButton"]
+
+[node name="RaceInterface" type="CanvasLayer" unique_id=1902663441]
+layer = 10
+script = ExtResource("1_we8d1")
+metadata/control_paths = {
+"best_label": NodePath("Root/Hud/@PanelContainer@73/@VBoxContainer@74/BestLabel"),
+"cockpit_choice": NodePath("Root/Menu/Columns/Conditions/CockpitChoice"),
+"countdown_label": NodePath("Root/Hud/CountdownLabel"),
+"fullscreen_toggle": NodePath("Root/Menu/Columns/Conditions/FullscreenToggle"),
+"gear_label": NodePath("Root/Hud/@PanelContainer@81/@VBoxContainer@82/GearLabel"),
+"grid": NodePath("Root/Menu/Columns/Circuit/Tracks"),
+"hud": NodePath("Root/Hud"),
+"lap_choice": NodePath("Root/Menu/Columns/Conditions/LapChoice"),
+"lap_label": NodePath("Root/Hud/@PanelContainer@73/@VBoxContainer@74/LapLabel"),
+"menu": NodePath("Root/Menu"),
+"minimap": NodePath("Root/Hud/@PanelContainer@79/Minimap"),
+"modal": NodePath("Root/Modal"),
+"modal_stack": NodePath("Root/Modal/@CenterContainer@93/@PanelContainer@94/ModalStack"),
+"preview": NodePath("Root/Menu/Columns/Circuit/Preview"),
+"progress_bar": NodePath("Root/Hud/@PanelContainer@73/@VBoxContainer@74/ProgressBar"),
+"reduced_motion": NodePath("Root/Menu/Columns/Conditions/ReducedMotion"),
+"root": NodePath("Root"),
+"rpm_bar": NodePath("Root/Hud/@PanelContainer@81/@VBoxContainer@82/RpmBar"),
+"speed_label": NodePath("Root/Hud/@PanelContainer@81/@VBoxContainer@82/SpeedRow/SpeedLabel"),
+"start_button": NodePath("Root/Menu/StartButton"),
+"status_label": NodePath("Root/Hud/StatusLabel"),
+"timer_label": NodePath("Root/Hud/@PanelContainer@73/@VBoxContainer@74/TimerLabel"),
+"track_best": NodePath("Root/Menu/Columns/Circuit/TrackBest"),
+"track_detail": NodePath("Root/Menu/Columns/Circuit/TrackDetail"),
+"track_title": NodePath("Root/Menu/Columns/Circuit/TrackTitle"),
+"vehicle_choice": NodePath("Root/Menu/Columns/Vehicle/VehicleChoice"),
+"vehicle_detail": NodePath("Root/Menu/Columns/Vehicle/VehicleDetail"),
+"volume_slider": NodePath("Root/Menu/Columns/Conditions/VolumeSlider")
+}
+
+[node name="Root" type="Control" parent="." unique_id=228527919]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme = SubResource("Theme_wfr4q")
+
+[node name="Menu" type="Control" parent="Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Shade" type="ColorRect" parent="Root/Menu"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.025, 0.03, 0.04, 0.96)
+
+[node name="Title" type="Label" parent="Root/Menu"]
+offset_left = 32.0
+offset_top = 28.0
+text = "单人计时赛"
+theme_override_fonts/font = ExtResource("FontBold")
+theme_override_font_sizes/font_size = 32
+
+[node name="Back" type="Button" parent="Root/Menu"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -184.0
+offset_right = -32.0
+offset_top = 28.0
+text = "←  返回"
+
+[node name="Columns" type="HBoxContainer" parent="Root/Menu"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = 110.0
+offset_right = -32.0
+offset_bottom = -116.0
+theme_override_constants/separation = 20
+
+[node name="Circuit" type="VBoxContainer" parent="Root/Menu/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Heading" type="Label" parent="Root/Menu/Columns/Circuit"]
+layout_mode = 2
+text = "赛道"
+theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = ExtResource("FontBold")
+
+[node name="Rule" type="ColorRect" parent="Root/Menu/Columns/Circuit"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 2)
+color = Color(0.9, 0.12, 0.19, 1)
+
+[node name="TrackTitle" type="Label" parent="Root/Menu/Columns/Circuit"]
+theme_override_fonts/font = ExtResource("FontBold")
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 30
+
+
+[node name="Tracks" type="GridContainer" parent="Root/Menu/Columns/Circuit"]
+layout_mode = 2
+columns = 3
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+
+[node name="@Button@96" type="Button" parent="Root/Menu/Columns/Circuit/Tracks"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "蒙扎"
+metadata/track_key = "monza"
+
+size_flags_horizontal = 3
+
+[node name="@Button@97" type="Button" parent="Root/Menu/Columns/Circuit/Tracks"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "斯帕"
+metadata/track_key = "spa"
+
+size_flags_horizontal = 3
+
+[node name="@Button@98" type="Button" parent="Root/Menu/Columns/Circuit/Tracks"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "银石"
+metadata/track_key = "silverstone"
+
+size_flags_horizontal = 3
+
+[node name="@Button@99" type="Button" parent="Root/Menu/Columns/Circuit/Tracks"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "纽博格林"
+metadata/track_key = "nurburgring"
+
+size_flags_horizontal = 3
+
+[node name="@Button@100" type="Button" parent="Root/Menu/Columns/Circuit/Tracks"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "铃鹿"
+metadata/track_key = "suzuka"
+
+size_flags_horizontal = 3
+
+[node name="@Button@101" type="Button" parent="Root/Menu/Columns/Circuit/Tracks"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "伊莫拉"
+metadata/track_key = "imola"
+
+size_flags_horizontal = 3
+
+[node name="@Button@102" type="Button" parent="Root/Menu/Columns/Circuit/Tracks"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "红牛环"
+metadata/track_key = "redbull"
+
+size_flags_horizontal = 3
+
+[node name="@Button@103" type="Button" parent="Root/Menu/Columns/Circuit/Tracks"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "巴瑟斯特"
+metadata/track_key = "bathurst"
+
+size_flags_horizontal = 3
+
+[node name="@Button@104" type="Button" parent="Root/Menu/Columns/Circuit/Tracks"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "拉古纳·塞卡"
+metadata/track_key = "laguna"
+
+size_flags_horizontal = 3
+
+[node name="Preview" type="Control" parent="Root/Menu/Columns/Circuit"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+script = ExtResource("2_67s1c")
+
+size_flags_vertical = 3
+
+[node name="TrackDetail" type="Label" parent="Root/Menu/Columns/Circuit"]
+autowrap_mode = 2
+layout_mode = 2
+theme_override_colors/font_color = Color(0.63529414, 0.7058824, 0.7607843, 1)
+theme_override_font_sizes/font_size = 14
+
+
+[node name="TrackBest" type="Label" parent="Root/Menu/Columns/Circuit"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.13, 0.20, 1)
+theme_override_font_sizes/font_size = 16
+
+
+[node name="Vehicle" type="VBoxContainer" parent="Root/Menu/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Heading" type="Label" parent="Root/Menu/Columns/Vehicle"]
+layout_mode = 2
+text = "车辆"
+theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = ExtResource("FontBold")
+
+[node name="Rule" type="ColorRect" parent="Root/Menu/Columns/Vehicle"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 2)
+color = Color(0.9, 0.12, 0.19, 1)
+
+[node name="VehicleChoice" type="OptionButton" parent="Root/Menu/Columns/Vehicle"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+selected = 0
+item_count = 3
+popup/item_0/text = "雷霆八缸跑车"
+popup/item_0/id = 0
+popup/item_1/text = "疾风拉力车"
+popup/item_1/id = 1
+popup/item_2/text = "巅峰原型车"
+popup/item_2/id = 2
+
+
+[node name="VehiclePreview" type="TextureRect" parent="Root/Menu/Columns/Vehicle"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 160)
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VehicleDetail" type="Label" parent="Root/Menu/Columns/Vehicle"]
+autowrap_mode = 2
+layout_mode = 2
+theme_override_colors/font_color = Color(0.63529414, 0.7058824, 0.7607843, 1)
+theme_override_font_sizes/font_size = 16
+text = "前置八缸 · 稳定长轴距"
+
+
+[node name="Controls" type="Label" parent="Root/Menu/Columns/Vehicle"]
+layout_mode = 2
+text = "自动换挡    Q 手动降挡"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.6, 0.65, 0.7, 1)
+
+[node name="Conditions" type="VBoxContainer" parent="Root/Menu/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Heading" type="Label" parent="Root/Menu/Columns/Conditions"]
+layout_mode = 2
+text = "比赛条件"
+theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = ExtResource("FontBold")
+
+[node name="Rule" type="ColorRect" parent="Root/Menu/Columns/Conditions"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 2)
+color = Color(0.9, 0.12, 0.19, 1)
+
+[node name="WeatherTitle" type="Label" parent="Root/Menu/Columns/Conditions"]
+layout_mode = 2
+text = "天气"
+theme_override_font_sizes/font_size = 15
+
+[node name="WeatherChoice" type="OptionButton" parent="Root/Menu/Columns/Conditions"]
+layout_mode = 2
+selected = 0
+item_count = 4
+popup/item_0/text = "晴天 · 午后"
+popup/item_0/id = 0
+popup/item_1/text = "阴天 · 柔光"
+popup/item_1/id = 1
+popup/item_2/text = "雨天 · 湿地"
+popup/item_2/id = 2
+popup/item_3/text = "晴天 · 日落"
+popup/item_3/id = 3
+
+
+[node name="LapsTitle" type="Label" parent="Root/Menu/Columns/Conditions"]
+layout_mode = 2
+text = "比赛圈数"
+theme_override_font_sizes/font_size = 15
+
+[node name="LapChoice" type="OptionButton" parent="Root/Menu/Columns/Conditions"]
+layout_mode = 2
+selected = 1
+item_count = 3
+popup/item_0/text = "1 圈"
+popup/item_0/id = 1
+popup/item_1/text = "3 圈"
+popup/item_1/id = 3
+popup/item_2/text = "5 圈"
+popup/item_2/id = 5
+
+
+[node name="CockpitChoice" type="CheckButton" parent="Root/Menu/Columns/Conditions"]
+layout_mode = 2
+button_pressed = true
+text = "车内视角"
+
+
+[node name="ReducedMotion" type="CheckButton" parent="Root/Menu/Columns/Conditions"]
+layout_mode = 2
+text = "减少镜头晃动"
+
+
+[node name="FullscreenToggle" type="CheckButton" parent="Root/Menu/Columns/Conditions"]
+layout_mode = 2
+text = "全屏"
+
+
+[node name="VolumeTitle" type="Label" parent="Root/Menu/Columns/Conditions"]
+layout_mode = 2
+text = "音量"
+theme_override_font_sizes/font_size = 15
+
+[node name="VolumeSlider" type="HSlider" parent="Root/Menu/Columns/Conditions"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.01
+value = 0.7
+
+
+[node name="Attribution" type="Label" parent="Root/Menu"]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = -105.0
+text = "地图 © OpenStreetMap 贡献者 · ODbL"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.5, 0.55, 0.6, 1)
+
+[node name="StartButton" type="Button" parent="Root/Menu"]
+theme_override_fonts/font = ExtResource("FontBold")
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 1
+anchor_top = 1.0
+anchor_bottom = 1.0
+anchor_right = 1.0
+offset_left = 32.0
+offset_top = -76.0
+offset_right = -32.0
+offset_bottom = -24.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_hwy7h")
+text = "开始比赛   →"
+
+
+[node name="Hud" type="Control" parent="Root" unique_id=855799942]
+visible = false
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="@PanelContainer@73" type="PanelContainer" parent="Root/Hud" unique_id=1023638261]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 24.0
+offset_bottom = 24.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_ir4t5")
+
+[node name="@VBoxContainer@74" type="VBoxContainer" parent="Root/Hud/@PanelContainer@73" unique_id=1968082634]
+layout_mode = 2
+
+[node name="LapLabel" type="Label" parent="Root/Hud/@PanelContainer@73/@VBoxContainer@74" unique_id=1138878729]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_shadow_color = Color(0.015, 0.02, 0.025, 0.65)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 1
+theme_override_colors/font_outline_color = Color(0.01, 0.015, 0.02, 0.5)
+
+[node name="TimerLabel" type="Label" parent="Root/Hud/@PanelContainer@73/@VBoxContainer@74" unique_id=1810018730]
+theme_override_fonts/font = ExtResource("FontBold")
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 32
+text = "00:00.000"
+theme_override_colors/font_shadow_color = Color(0.015, 0.02, 0.025, 0.65)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 1
+theme_override_colors/font_outline_color = Color(0.01, 0.015, 0.02, 0.5)
+
+[node name="BestLabel" type="Label" parent="Root/Hud/@PanelContainer@73/@VBoxContainer@74" unique_id=527604239]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.63529414, 0.7058824, 0.7607843, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_shadow_color = Color(0.015, 0.02, 0.025, 0.65)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 1
+theme_override_colors/font_outline_color = Color(0.01, 0.015, 0.02, 0.5)
+
+[node name="ProgressBar" type="ProgressBar" parent="Root/Hud/@PanelContainer@73/@VBoxContainer@74" unique_id=2086636320]
+custom_minimum_size = Vector2(224, 6)
+layout_mode = 2
+max_value = 1.0
+show_percentage = false
+
+[node name="@PanelContainer@79" type="PanelContainer" parent="Root/Hud" unique_id=1534474650]
+custom_minimum_size = Vector2(184, 148)
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -209.0
+offset_top = 24.0
+offset_right = -25.0
+offset_bottom = 172.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_xyo5p")
+
+[node name="Minimap" type="Control" parent="Root/Hud/@PanelContainer@79" unique_id=1746513543]
+custom_minimum_size = Vector2(164, 132)
+layout_mode = 2
+script = ExtResource("2_67s1c")
+
+[node name="@PanelContainer@81" type="PanelContainer" parent="Root/Hud" unique_id=1077632108]
+custom_minimum_size = Vector2(280, 155)
+layout_mode = 0
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -304.0
+offset_top = -180.0
+offset_right = -25.0
+offset_bottom = -25.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_6s1gn")
+
+[node name="@VBoxContainer@82" type="VBoxContainer" parent="Root/Hud/@PanelContainer@81" unique_id=817411282]
+layout_mode = 2
+
+[node name="SpeedRow" type="HBoxContainer" parent="Root/Hud/@PanelContainer@81/@VBoxContainer@82"]
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="SpeedLabel" type="Label" parent="Root/Hud/@PanelContainer@81/@VBoxContainer@82/SpeedRow" unique_id=235677262]
+theme_override_fonts/font = ExtResource("FontBold")
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 54
+text = "000"
+theme_override_colors/font_shadow_color = Color(0.015, 0.02, 0.025, 0.65)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 1
+theme_override_colors/font_outline_color = Color(0.01, 0.015, 0.02, 0.5)
+
+[node name="GearLarge" type="Label" parent="Root/Hud/@PanelContainer@81/@VBoxContainer@82/SpeedRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 2
+vertical_alignment = 1
+theme_override_fonts/font = ExtResource("FontBold")
+theme_override_font_sizes/font_size = 48
+theme_override_colors/font_color = Color(0.95, 0.19, 0.26, 1)
+text = "1"
+theme_override_colors/font_shadow_color = Color(0.015, 0.02, 0.025, 0.65)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 1
+theme_override_colors/font_outline_color = Color(0.01, 0.015, 0.02, 0.5)
+
+[node name="GearLabel" type="Label" parent="Root/Hud/@PanelContainer@81/@VBoxContainer@82" unique_id=983153274]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.68, 0.75, 0.81, 1)
+theme_override_font_sizes/font_size = 14
+text = "空挡 · 公里/时"
+theme_override_colors/font_shadow_color = Color(0.015, 0.02, 0.025, 0.65)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 1
+theme_override_colors/font_outline_color = Color(0.01, 0.015, 0.02, 0.5)
+
+[node name="RpmBar" type="ProgressBar" parent="Root/Hud/@PanelContainer@81/@VBoxContainer@82" unique_id=2111148629]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+max_value = 8000.0
+show_percentage = false
+
+[node name="StatusLabel" type="Label" parent="Root/Hud" unique_id=1032281959]
+layout_mode = 0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = -110.0
+offset_right = 850.0
+autowrap_mode = 2
+offset_bottom = -80.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_shadow_color = Color(0.015, 0.02, 0.025, 0.65)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 1
+theme_override_colors/font_outline_color = Color(0.01, 0.015, 0.02, 0.5)
+
+[node name="@HBoxContainer@87" type="HBoxContainer" parent="Root/Hud" unique_id=176837486]
+layout_mode = 0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -70.0
+offset_right = 350.0
+offset_bottom = -26.0
+theme_override_constants/separation = 10
+
+[node name="@Button@88" type="Button" parent="Root/Hud/@HBoxContainer@87" unique_id=1304121177]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Esc  暂停"
+theme_override_styles/normal = SubResource("ClearHudButton")
+
+[node name="@Button@89" type="Button" parent="Root/Hud/@HBoxContainer@87" unique_id=341250426]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "C  切换视角"
+theme_override_styles/normal = SubResource("ClearHudButton")
+
+[node name="CountdownLabel" type="Label" parent="Root/Hud" unique_id=1530482701]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240.0
+offset_top = -80.0
+offset_right = 240.0
+offset_bottom = 50.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 76
+horizontal_alignment = 1
+theme_override_colors/font_shadow_color = Color(0.015, 0.02, 0.025, 0.65)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 1
+theme_override_colors/font_outline_color = Color(0.01, 0.015, 0.02, 0.5)
+
+[node name="Modal" type="Control" parent="Root" unique_id=1844430967]
+visible = false
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="@ColorRect@92" type="ColorRect" parent="Root/Modal" unique_id=852399182]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.025, 0.05, 0.08, 0.9)
+
+[node name="@CenterContainer@93" type="CenterContainer" parent="Root/Modal" unique_id=887020382]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="@PanelContainer@94" type="PanelContainer" parent="Root/Modal/@CenterContainer@93" unique_id=917699477]
+custom_minimum_size = Vector2(540, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_e36ec")
+
+[node name="ModalStack" type="VBoxContainer" parent="Root/Modal/@CenterContainer@93/@PanelContainer@94" unique_id=558232531]
+layout_mode = 2
+theme_override_constants/separation = 8

@@ -1,0 +1,195 @@
+{
+  "status": "not_accepted_as_1_to_1",
+  "reference_version": "pending_user_choice_ACC_or_2026",
+  "units": "metres",
+  "acceptance_rule": "A drivable lap or matching total length does not establish faithful reconstruction.",
+  "circuits": {
+    "monza": {
+      "name": "蒙扎",
+      "scene": "godot/scenes/circuits/monza.tscn",
+      "status": "geographic_prototype",
+      "building_count": 120,
+      "building_heights_with_OSM_height_tag": 0,
+      "height_tag_is_not_survey_verification": true,
+      "road_width": "constant nominal, not a surveyed cross-section profile",
+      "road_elevation": "SRTM30m, not measured road surface",
+      "pending": [
+        "per-corner road edges and camber",
+        "kerb shape and placement",
+        "runoff material and boundary",
+        "building facade and foundation",
+        "barriers and landmark positions",
+        "matched-version reference views"
+      ]
+    },
+    "spa": {
+      "name": "斯帕",
+      "scene": "godot/scenes/circuits/spa.tscn",
+      "status": "geographic_prototype",
+      "building_count": 153,
+      "building_heights_with_OSM_height_tag": 0,
+      "height_tag_is_not_survey_verification": true,
+      "road_width": "constant nominal, not a surveyed cross-section profile",
+      "road_elevation": "SRTM30m, not measured road surface",
+      "pending": [
+        "per-corner road edges and camber",
+        "kerb shape and placement",
+        "runoff material and boundary",
+        "building facade and foundation",
+        "barriers and landmark positions",
+        "matched-version reference views"
+      ]
+    },
+    "silverstone": {
+      "name": "银石",
+      "scene": "godot/scenes/circuits/silverstone.tscn",
+      "status": "geographic_prototype",
+      "building_count": 196,
+      "building_heights_with_OSM_height_tag": 3,
+      "height_tag_is_not_survey_verification": true,
+      "road_width": "constant nominal, not a surveyed cross-section profile",
+      "road_elevation": "SRTM30m, not measured road surface",
+      "pending": [
+        "per-corner road edges and camber",
+        "kerb shape and placement",
+        "runoff material and boundary",
+        "building facade and foundation",
+        "barriers and landmark positions",
+        "matched-version reference views"
+      ]
+    },
+    "nurburgring": {
+      "name": "纽博格林 GP",
+      "scene": "godot/scenes/circuits/nurburgring.tscn",
+      "status": "geographic_prototype",
+      "building_count": 72,
+      "building_heights_with_OSM_height_tag": 1,
+      "height_tag_is_not_survey_verification": true,
+      "road_width": "constant nominal, not a surveyed cross-section profile",
+      "road_elevation": "SRTM30m, not measured road surface",
+      "pending": [
+        "per-corner road edges and camber",
+        "kerb shape and placement",
+        "runoff material and boundary",
+        "building facade and foundation",
+        "barriers and landmark positions",
+        "matched-version reference views"
+      ]
+    },
+    "suzuka": {
+      "name": "铃鹿",
+      "scene": "godot/scenes/circuits/suzuka.tscn",
+      "status": "geographic_prototype",
+      "building_count": 143,
+      "building_heights_with_OSM_height_tag": 0,
+      "height_tag_is_not_survey_verification": true,
+      "road_width": "constant nominal, not a surveyed cross-section profile",
+      "road_elevation": "SRTM30m, not measured road surface",
+      "pending": [
+        "per-corner road edges and camber",
+        "kerb shape and placement",
+        "runoff material and boundary",
+        "building facade and foundation",
+        "barriers and landmark positions",
+        "matched-version reference views"
+      ]
+    },
+    "imola": {
+      "name": "伊莫拉",
+      "scene": "godot/scenes/circuits/imola.tscn",
+      "status": "geographic_prototype",
+      "building_count": 236,
+      "building_heights_with_OSM_height_tag": 0,
+      "height_tag_is_not_survey_verification": true,
+      "road_width": "constant nominal, not a surveyed cross-section profile",
+      "road_elevation": "SRTM30m, not measured road surface",
+      "pending": [
+        "per-corner road edges and camber",
+        "kerb shape and placement",
+        "runoff material and boundary",
+        "building facade and foundation",
+        "barriers and landmark positions",
+        "matched-version reference views"
+      ]
+    },
+    "redbull": {
+      "name": "红牛环",
+      "scene": "godot/scenes/circuits/redbull.tscn",
+      "status": "geographic_prototype",
+      "building_count": 49,
+      "building_heights_with_OSM_height_tag": 0,
+      "height_tag_is_not_survey_verification": true,
+      "road_width": "constant nominal, not a surveyed cross-section profile",
+      "road_elevation": "SRTM30m, not measured road surface",
+      "pending": [
+        "per-corner road edges and camber",
+        "kerb shape and placement",
+        "runoff material and boundary",
+        "building facade and foundation",
+        "barriers and landmark positions",
+        "matched-version reference views"
+      ]
+    },
+    "bathurst": {
+      "name": "巴瑟斯特",
+      "scene": "godot/scenes/circuits/bathurst.tscn",
+      "status": "geographic_prototype",
+      "building_count": 113,
+      "building_heights_with_OSM_height_tag": 0,
+      "height_tag_is_not_survey_verification": true,
+      "road_width": "constant nominal, not a surveyed cross-section profile",
+      "road_elevation": "SRTM30m, not measured road surface",
+      "pending": [
+        "per-corner road edges and camber",
+        "kerb shape and placement",
+        "runoff material and boundary",
+        "building facade and foundation",
+        "barriers and landmark positions",
+        "matched-version reference views"
+      ]
+    },
+    "laguna": {
+      "name": "拉古纳·塞卡",
+      "scene": "godot/scenes/circuits/laguna.tscn",
+      "status": "geographic_prototype",
+      "building_count": 51,
+      "building_heights_with_OSM_height_tag": 0,
+      "height_tag_is_not_survey_verification": true,
+      "road_width": "constant nominal, not a surveyed cross-section profile",
+      "road_elevation": "SRTM30m, not measured road surface",
+      "pending": [
+        "per-corner road edges and camber",
+        "kerb shape and placement",
+        "runoff material and boundary",
+        "building facade and foundation",
+        "barriers and landmark positions",
+        "matched-version reference views"
+      ]
+    }
+  },
+  "verified_reference_facts": [
+    {
+      "circuit": "suzuka",
+      "fact": "Official course guide gives width 10–16 m; current project uses constant 13 m.",
+      "url": "https://www.suzukacircuit.jp/eng/course_s/"
+    },
+    {
+      "circuit": "laguna",
+      "fact": "Corkscrew T8 to T8A drops 59 feet over 450 feet; this project has not verified those exact landmark elevations.",
+      "url": "https://weathertechraceway.com/pages/track-information"
+    },
+    {
+      "circuit": "bathurst",
+      "fact": "Council specifies circuit length 6.213 km; published length alone is not enough to verify all road geometry.",
+      "url": "https://www.bathurst.nsw.gov.au/Services/Facilities/Mount-Panorama/About-the-Mount/Track-Facts"
+    }
+  ],
+  "candidate_precision_data": [
+    {
+      "region": "Spa / Wallonia",
+      "type": "LiDAR-derived 0.5m DTM, 2021–2022",
+      "status": "identified, not downloaded, not verified against ACC version",
+      "url": "https://geoservices.wallonie.be/arcgis/rest/services/RELIEF/WALLONIE_MNT_2021_2022/MapServer"
+    }
+  ]
+}

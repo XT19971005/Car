@@ -1,0 +1,374 @@
+[gd_scene load_steps=8 format=3]
+
+[sub_resource type="StandardMaterial3D" id="Floor"]
+
+albedo_color = Color(0.035, 0.043, 0.055, 1)
+
+roughness = 0.42
+
+metallic = 0.18
+
+[sub_resource type="StandardMaterial3D" id="Wall"]
+
+albedo_color = Color(0.07, 0.085, 0.10, 1)
+
+roughness = 0.8
+
+metallic = 0
+
+[sub_resource type="StandardMaterial3D" id="Metal"]
+
+albedo_color = Color(0.16, 0.19, 0.22, 1)
+
+roughness = 0.35
+
+metallic = 0.7
+
+[sub_resource type="StandardMaterial3D" id="Amber"]
+
+albedo_color = Color(1, 0.53, 0.18, 1)
+
+roughness = 0.4
+
+metallic = 0
+
+emission_enabled = true
+
+emission = Color(1, 0.53, 0.18, 1)
+
+emission_energy_multiplier = 2.0
+
+[sub_resource type="StandardMaterial3D" id="White"]
+
+albedo_color = Color(0.68, 0.79, 0.85, 1)
+
+roughness = 0.4
+
+metallic = 0
+
+emission_enabled = true
+
+emission = Color(0.68, 0.79, 0.85, 1)
+
+emission_energy_multiplier = 2.0
+
+[sub_resource type="BoxMesh" id="Cube"]
+
+size = Vector3(1, 1, 1)
+
+[sub_resource type="CylinderMesh" id="Plinth"]
+
+top_radius = 3.25
+
+bottom_radius = 3.3
+
+height = 0.08
+
+radial_segments = 64
+
+[node name="Showroom" type="Node3D"]
+
+position = Vector3(10000, 0, 0)
+
+[node name="CarDisplay" type="Node3D" parent="."]
+
+position = Vector3(1.4, 0.09, 0)
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+
+position = Vector3(0, -0.16, 0)
+
+scale = Vector3(36, 0.3, 30)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Floor")
+
+[node name="BackWall" type="MeshInstance3D" parent="."]
+
+position = Vector3(0, 3, -7)
+
+scale = Vector3(36, 6, 0.25)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Wall")
+
+[node name="SideWall" type="MeshInstance3D" parent="."]
+
+position = Vector3(-9, 3, 0)
+
+scale = Vector3(0.25, 6, 20)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Wall")
+
+[node name="SteelColumn0" type="MeshInstance3D" parent="."]
+
+position = Vector3(-8, 2.8, -6.6)
+
+scale = Vector3(0.14, 5.6, 0.18)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Metal")
+
+[node name="WallLight0" type="MeshInstance3D" parent="."]
+
+position = Vector3(-7.6, 2.2, -6.42)
+
+scale = Vector3(0.035, 3.3, 0.05)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Amber")
+
+[node name="SteelColumn1" type="MeshInstance3D" parent="."]
+
+position = Vector3(-4, 2.8, -6.6)
+
+scale = Vector3(0.14, 5.6, 0.18)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Metal")
+
+[node name="WallLight1" type="MeshInstance3D" parent="."]
+
+position = Vector3(-3.6, 2.2, -6.42)
+
+scale = Vector3(0.035, 3.3, 0.05)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Amber")
+
+[node name="SteelColumn2" type="MeshInstance3D" parent="."]
+
+position = Vector3(0, 2.8, -6.6)
+
+scale = Vector3(0.14, 5.6, 0.18)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Metal")
+
+[node name="WallLight2" type="MeshInstance3D" parent="."]
+
+position = Vector3(0.4, 2.2, -6.42)
+
+scale = Vector3(0.035, 3.3, 0.05)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Amber")
+
+[node name="SteelColumn3" type="MeshInstance3D" parent="."]
+
+position = Vector3(4, 2.8, -6.6)
+
+scale = Vector3(0.14, 5.6, 0.18)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Metal")
+
+[node name="WallLight3" type="MeshInstance3D" parent="."]
+
+position = Vector3(4.4, 2.2, -6.42)
+
+scale = Vector3(0.035, 3.3, 0.05)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Amber")
+
+[node name="SteelColumn4" type="MeshInstance3D" parent="."]
+
+position = Vector3(8, 2.8, -6.6)
+
+scale = Vector3(0.14, 5.6, 0.18)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Metal")
+
+[node name="WallLight4" type="MeshInstance3D" parent="."]
+
+position = Vector3(8.4, 2.2, -6.42)
+
+scale = Vector3(0.035, 3.3, 0.05)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Amber")
+
+[node name="SteelColumn5" type="MeshInstance3D" parent="."]
+
+position = Vector3(12, 2.8, -6.6)
+
+scale = Vector3(0.14, 5.6, 0.18)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Metal")
+
+[node name="WallLight5" type="MeshInstance3D" parent="."]
+
+position = Vector3(12.4, 2.2, -6.42)
+
+scale = Vector3(0.035, 3.3, 0.05)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Amber")
+
+[node name="CeilingStrip0" type="MeshInstance3D" parent="."]
+
+position = Vector3(2, 5.2, -4)
+
+scale = Vector3(12, 0.045, 0.10)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("White")
+
+[node name="CeilingStrip1" type="MeshInstance3D" parent="."]
+
+position = Vector3(2, 5.2, 0)
+
+scale = Vector3(12, 0.045, 0.10)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("White")
+
+[node name="CeilingStrip2" type="MeshInstance3D" parent="."]
+
+position = Vector3(2, 5.2, 4)
+
+scale = Vector3(12, 0.045, 0.10)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("White")
+
+[node name="DisplayPlinth" type="MeshInstance3D" parent="."]
+
+position = Vector3(1.4, 0.025, 0)
+
+mesh = SubResource("Plinth")
+
+material_override = SubResource("Metal")
+
+[node name="Key" type="SpotLight3D" parent="."]
+
+position = Vector3(3, 4, 3)
+
+light_color = Color(1, 0.86, 0.68, 1)
+
+light_energy = 12.0
+rotation_degrees = Vector3(-48, 28, 0)
+spot_range = 14.0
+spot_angle = 55.0
+spot_attenuation = 0.8
+
+
+shadow_enabled = true
+shadow_bias = 0.025
+shadow_normal_bias = 0.3
+
+[node name="Rim" type="OmniLight3D" parent="."]
+
+position = Vector3(-3, 3, -3)
+
+light_color = Color(0.38, 0.65, 1, 1)
+
+light_energy = 1.4
+
+omni_range = 14.0
+
+shadow_enabled = true
+shadow_bias = 0.025
+shadow_normal_bias = 0.3
+
+[node name="Fill" type="OmniLight3D" parent="."]
+
+position = Vector3(5, 2, -2)
+
+light_color = Color(0.8, 0.9, 1, 1)
+
+light_energy = 0.5
+
+omni_range = 14.0
+
+shadow_enabled = true
+shadow_bias = 0.025
+shadow_normal_bias = 0.3
+
+[node name="ToolCabinet" type="MeshInstance3D" parent="."]
+
+position = Vector3(-4, 0.85, -5)
+
+scale = Vector3(1.8, 1.7, 0.8)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Metal")
+
+[node name="Drawer0" type="MeshInstance3D" parent="."]
+
+position = Vector3(-4, 0.3, -4.57)
+
+scale = Vector3(1.6, 0.018, 0.04)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Amber")
+
+[node name="Drawer1" type="MeshInstance3D" parent="."]
+
+position = Vector3(-4, 0.5800000000000001, -4.57)
+
+scale = Vector3(1.6, 0.018, 0.04)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Amber")
+
+[node name="Drawer2" type="MeshInstance3D" parent="."]
+
+position = Vector3(-4, 0.8600000000000001, -4.57)
+
+scale = Vector3(1.6, 0.018, 0.04)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Amber")
+
+[node name="Drawer3" type="MeshInstance3D" parent="."]
+
+position = Vector3(-4, 1.1400000000000001, -4.57)
+
+scale = Vector3(1.6, 0.018, 0.04)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Amber")
+
+[node name="Drawer4" type="MeshInstance3D" parent="."]
+
+position = Vector3(-4, 1.4200000000000002, -4.57)
+
+scale = Vector3(1.6, 0.018, 0.04)
+
+mesh = SubResource("Cube")
+
+material_override = SubResource("Amber")
+
+[node name="Ceiling" type="MeshInstance3D" parent="."]
+position = Vector3(0, 5.7, 0)
+scale = Vector3(36, 0.18, 30)
+mesh = SubResource("Cube")
+material_override = SubResource("Wall")
