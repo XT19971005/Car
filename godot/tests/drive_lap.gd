@@ -10,6 +10,8 @@ func _run() -> void:
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--track="):
 			game.select_track(argument.trim_prefix("--track="))
+		if argument.begins_with("--car="):
+			game.select_vehicle(argument.trim_prefix("--car="))
 	game.ui.lap_choice.select(0)
 	game.start_race()
 	game.set_physics_process(false)
@@ -28,7 +30,7 @@ func _run() -> void:
 		var ahead: Dictionary = game.track.at_progress(float(sample.progress) + 65.0 / game.track.length)
 		var bend := absf((sample.tangent as Vector3).signed_angle_to(ahead.tangent, Vector3.UP))
 		var target_speed := clampf(42.0 - bend * 30, 13, 42)
-		car.drive(1.0 / 60, 1.0 if car.speed < target_speed else 0.0, 0.65 if car.speed > target_speed + 1.0 else 0.0, clampf(-error * 2.7, -1, 1), false, float(sample.distance) > 8.85)
+		car.drive(1.0 / 60, 1.0 if car.speed < target_speed else 0.0, 0.65 if car.speed > target_speed + 1.0 else 0.0, clampf(-error * 2.7, -1, 1), false, float(sample.distance) > game.track.half_width + .85)
 		stalled = stalled + 1 if step > 120 and absf(car.speed) < 1.5 else 0
 		if step % 300 == 0:
 			if step > 300 and absf(float(sample.progress) - last_checkpoint_progress) < 0.001:
@@ -45,13 +47,19 @@ func _run() -> void:
 		peak_offroad = maxf(peak_offroad, float(sample.distance))
 		if not car.is_on_floor():
 			airborne += 1
-		var event: String = game.session.tick(1.0 / 60, float(sample.progress), float(sample.distance) <= 9, car.velocity.dot(sample.tangent) > 0)
+		var event: String = game.session.tick(1.0 / 60, float(sample.progress), float(sample.distance) <= game.track.half_width + 1.0, car.velocity.dot(sample.tangent) > 0)
 		if step % 3000 == 0:
 			print("DRIVE step=%d gate=%d progress=%.3f speed=%.1f distance=%.2f" % [step, game.session.next_gate, sample.progress, car.speed, sample.distance])
 		if event == "finish":
+			if peak_offroad > game.track.half_width + 1.0:
+				push_error("DRIVE FAIL: controller left track: %.2fm" % peak_offroad)
+				game.queue_free()
+				await process_frame
+				quit(1)
+				return
 			game._save_record()
 			game._finish()
-			print("DRIVE PASS: track=%s lap=%.3f max_road_offset=%.2fm airborne_ticks=%d results=%s" % [game.selected_track, game.session.elapsed, peak_offroad, airborne, game.state == game.State.RESULTS])
+			print("DRIVE PASS: track=%s car=%s lap=%.3f max_road_offset=%.2fm airborne_ticks=%d results=%s" % [game.selected_track, game.selected_vehicle, game.session.elapsed, peak_offroad, airborne, game.state == game.State.RESULTS])
 			game.queue_free()
 			await process_frame
 			quit(0)

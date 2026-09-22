@@ -67,6 +67,7 @@ func _run() -> void:
 	check(game.session.elapsed == 0, "Pause freezes race timer")
 	game.resume_race()
 	var car = game.car
+	check(car.wheel_nodes.size() == 4, "GT import exposes four animated axles, excluding fixed wheel arches")
 	for i in 240:
 		await physics_frame
 		car.drive(1.0 / 60, 1, 0, 0, false, false)
@@ -92,6 +93,20 @@ func _run() -> void:
 		game.select_track(key)
 		check(game.track.length > 1000 and game.track.points.size() > 100, "Build track: " + key)
 		await process_frame
+	for key: String in preload("res://scripts/car_catalog.gd").CARS:
+		game.select_vehicle(key)
+		check(game.car.wheel_nodes.size() == 4 and game.car.cockpit_anchor != null, "Vehicle axles and cockpit import: " + key)
+		var bounds := AABB()
+		var first := true
+		for node: MeshInstance3D in game.car.body_visual.find_children("*", "MeshInstance3D", true, false):
+			var transform: Transform3D = game.car.body_visual.global_transform.affine_inverse() * node.global_transform
+			var box: AABB = transform * node.get_aabb()
+			bounds = box if first else bounds.merge(box)
+			first = false
+		check(absf(bounds.size.z - float(game.car.profile.length)) < .035, "Vehicle imported at catalogue metre length: " + key)
+		game.camera_mode = 2
+		game._update_camera(1, true)
+		check(game.camera.global_position.distance_to(game.car.cockpit_anchor.global_position) < .025 and (-game.camera.global_basis.z).dot(game.car.global_basis.z) > .98, "Cockpit sits at driver eye position facing forward: " + key)
 	game.queue_free()
 	await process_frame
 	print("RESULT: %d checks, %d failures" % [checks, failures])

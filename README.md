@@ -1,39 +1,34 @@
-# Apex Circuit
+# Apex Circuit — GT Experience
 
-当前主版本是 `godot/` 中的低多边形单人计时赛车。驾驶偏辅助街机，视觉采用简洁块面、灰绿远景和暖色光照。
+直接用 Godot 打开 `godot/project.godot` 并按 F5，或双击 `godot/启动游戏.cmd`。
 
-## 开始游戏
+## 当前可玩内容
 
-1. 双击 `godot/启动游戏.cmd`，或用 Godot 打开 `godot/project.godot` 后按 F5。
-2. 选择赛道和 1 / 3 / 5 圈，点击开始比赛。
-3. 完成检查点后查看结算，继续挑战最佳圈。
+- 蒙扎、斯帕、银石三个真实地理布局的米制场景，地形、维修区、看台、森林与安全设施。
+- V8 Endurance、R6 Heritage、V6 Apex 三款原创低多边形 GT，独立比例、驾驶参数和发动机音色。
+- 真实车内视角、转动方向盘、动态仪表、实时后视镜，以及近/远追车视角。
+- 1/3/5 圈单人计时赛：倒计时、24 个顺序检查点、三段计时、结算、分车型最佳成绩、暂停/重开。
+- 键盘与手柄、音量/全屏/减少晃动设置，自动变速、辅助抓地，轮胎/路肩/碰撞/换挡声音反馈。
 
-W/S 加速与刹车、A/D 转向、空格手刹、C 视角、R 复位、Esc 暂停。详见 [Godot 工程说明](godot/README.md)。
+操作：W/S 加速与刹车倒车，A/D 转向，空格手刹，C 切换视角，R 复位，Esc 暂停。手柄 RT/LT 为油门/刹车，左摇杆转向，Start 暂停。出界或复位会使当前圈无法计入最佳成绩。
 
-## 当前内容
+## 工程入口
 
-- 一辆 Kenney Clubsport 运动轿车，独立轮组动画、自动变速、惯性与辅助抓地。
-- 九条原型路线、24 个顺序检查点、三段计时、有效圈纪录、比赛结算。
-- 近/远追车和引擎盖视角、暂停/重开、失焦自动暂停、中文 HUD、小地图。
-- 音量/全屏设置与每条路线个人最佳成绩的本地存档。
-- 真实道路碰撞和连续路段投影；弯道内侧草地自动避开相邻道路。
+正式游戏在 `godot/`；Blender 源文件在 `art/source_blender/`；实拍在 `art/previews/`；建模与验证脚本在 `tools/`。早期网页原型保留供历史参考，见 `README-web-prototype.md`。
 
-本版完成单人计时赛循环。未包含 AI 对手、开放世界、联网、车辆改装或真实轮胎仿真。九条路线是原型中心线的简化版本，菜单显示实际生成长度，不声称真实赛道精度。
+[美术与比例依据](art/README.md) · [自检记录](art/VALIDATION.md) · [第三方数据声明](godot/THIRD_PARTY_NOTICES.md)
 
-## 开发与验证
+## 实际范围
 
-验证环境：Windows / Godot 4.7.2 / Compatibility 渲染 / Jolt Physics。
+本版是完整的单人计时赛循环。没有 AI 对手、联网、改装、天气系统或专业轮胎仿真。驾驶偏易上手；画面采用原创低多边形风格。场景由真实经纬度和地形数据构建，但道路宽度、部分建筑高度、护栏及局部设施仍为近似；三车是原创设计，不能称为 ACC 等价产品或测绘级一比一复刻。
+
+## 重建与验证
+
+验证环境：Windows、Godot 4.7.2、Forward+、Jolt、RTX 4070。美术生成：Blender 4.5。
 
 ```powershell
-.\tools\test-godot.ps1 -GodotPath '你的Godot.exe路径' -AllTracks
+./tools/build-art.ps1
+./tools/test-godot.ps1 -GodotPath '<Godot exe>' -AllTracks -AllCars
 ```
 
-该命令执行功能回归与九条路线实际车辆自动跑圈，经过道路碰撞及检查点后进入结算，不通过传送模拟成功。测试模式不会覆盖个人纪录。日志与画面检查输出在 `godot/test-output/`，不提交 Git。
-
-车型来源和许可见 [Godot 素材说明](godot/THIRD_PARTY_NOTICES.md)。美术方向参考 DREDGE，未使用其游戏素材。
-
-## 历史内容
-
-`src/`、`public/` 和网页构建文件保留为历史 Three.js 原型及原始素材。旧说明见 [README-web-prototype.md](README-web-prototype.md)。不要用旧网页说明判断当前 Godot 功能。
-
-迁移前两个 Godot 版本及退出主版本的烘焙道路资源保存在本机 `.local-backups/`，不提交 Git。原来的 `godot-staging/ApexCircuit` 已整理为正式 `godot/` 目录。
+其他专项测试：Godot 使用 `--headless --path godot --script res://tests/test_input.gd -- --test-mode` 或 `test_audio.gd`。`test_render.gd` 与 `capture_gt.gd` 需要图形渲染，不加 `--headless`。

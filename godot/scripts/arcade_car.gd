@@ -16,6 +16,14 @@ var wheel_rotations: Array[Vector3] = []
 var wheel_roll := 0.0
 var previous_speed := 0.0
 var slip := 0.0
+var vehicle_key := "v8"
+var profile: Dictionary = preload("res://scripts/car_catalog.gd").CARS.v8
+var cockpit_anchor: Node3D
+var steering_wheel: Node3D
+var dashboard: Label3D
+var acceleration_feedback := 0.0
+var impact_feedback := 0.0
+var shift_feedback := 0.0
 
 func _ready() -> void:
 	floor_snap_length = 1.2
@@ -33,23 +41,34 @@ func _ready() -> void:
 	add_child(collider)
 	body_visual = Node3D.new()
 	add_child(body_visual)
-	var model: Node3D = preload("res://assets/cars/sedan-sports.glb").instantiate()
+	configure_vehicle(vehicle_key)
+
+func configure_vehicle(key: String) -> void:
+	vehicle_key = key
+	profile = preload("res://scripts/car_catalog.gd").CARS[key]
+	for child in body_visual.get_children():
+		body_visual.remove_child(child)
+		child.queue_free()
+	wheel_nodes.clear()
+	wheel_rotations.clear()
+	var model: Node3D = load("res://assets/cars/" + str(profile.asset) + ".glb").instantiate()
 	body_visual.add_child(model)
-	var bounds := AABB()
-	var first := true
-	for node in model.find_children("*", "MeshInstance3D", true, false):
-		var mesh_node := node as MeshInstance3D
-		var local := model.global_transform.affine_inverse() * mesh_node.global_transform
-		var box: AABB = local * mesh_node.get_aabb()
-		bounds = box if first else bounds.merge(box)
-		first = false
-	var scale_factor := 4.4 / maxf(bounds.size.z, 0.1)
-	model.scale = Vector3.ONE * scale_factor
-	model.position = Vector3(-bounds.get_center().x, -bounds.position.y, -bounds.get_center().z) * scale_factor
+	# Source models use metres. Preserve physical dimensions at import.
 	for node in model.find_children("*", "Node3D", true, false):
-		if "wheel" in node.name.to_lower() and not "wheel" in node.get_parent().name.to_lower():
+		if node.name.to_lower().begins_with("wheel_front_") or node.name.to_lower().begins_with("wheel_rear_"):
 			wheel_nodes.append(node)
 			wheel_rotations.append(node.rotation)
+	cockpit_anchor = model.find_child("cockpit_camera", true, false)
+	steering_wheel = model.find_child("steering_wheel", true, false)
+	var screen := model.find_child("dash_display", true, false) as Node3D
+	dashboard = Label3D.new()
+	dashboard.font_size = 50
+	dashboard.pixel_size = .00075
+	dashboard.rotation.y = PI
+	dashboard.modulate = Color("9fffcf")
+	dashboard.outline_size = 0
+	dashboard.text = "N   000\nRPM 0950"
+	screen.add_child(dashboard)
 
 func reset_at(point: Vector3, direction: Vector3) -> void:
 	position = point + Vector3.UP * 0.14
@@ -65,6 +84,9 @@ func reset_at(point: Vector3, direction: Vector3) -> void:
 	rpm = 950.0
 	gear = 0
 	shift_timer = 0.0
+	impact_feedback = 0.0
+	shift_feedback = 0.0
+	acceleration_feedback = 0.0
 	if body_visual:
 		body_visual.rotation = Vector3.ZERO
 	reset_physics_interpolation()
@@ -77,10 +99,10 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 	var right := Vector3(forward.z, 0, -forward.x)
 	var longitudinal := velocity.dot(forward)
 	var lateral := velocity.dot(right)
-	var grip := 3.0 if offroad else 9.0
+	var grip := 3.0 if offroad else float(profile.grip)
 	if handbrake:
 		grip *= 0.32
-	var max_velocity := 28.0 if offroad else TOP_SPEED
+	var max_velocity := 28.0 if offroad else float(profile.top_speed)
 	if brake > 0.05:
 		if longitudinal > 0.3:
 			longitudinal = move_toward(longitudinal, 0.0, brake * 22.0 * dt)
@@ -90,7 +112,7 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 		if longitudinal < -0.2:
 			longitudinal = move_toward(longitudinal, 0.0, throttle * 18.0 * dt)
 		else:
-			longitudinal = move_toward(longitudinal, max_velocity, maxf(3.0, 12.0 - longitudinal * 0.1) * throttle * dt)
+			longitudinal = move_toward(longitudinal, max_velocity, maxf(3.0, float(profile.acceleration) - longitudinal * 0.1) * throttle * dt)
 	else:
 		longitudinal = move_toward(longitudinal, 0.0, (0.7 + absf(longitudinal) * 0.025) * dt)
 	if offroad and absf(longitudinal) > max_velocity:
@@ -99,7 +121,7 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 		longitudinal = move_toward(longitudinal, 0.0, dt * 9.0)
 	var steering_angle := lerpf(0.55, 0.045, clampf(absf(longitudinal) / TOP_SPEED, 0, 1))
 	# Model forward is +Z; a driver's right turn rotates toward -X.
-	var desired_yaw := -steering * longitudinal / 2.65 * tan(steering_angle)
+	var desired_yaw := -steering * longitudinal / float(profile.wheelbase) * tan(steering_angle)
 	desired_yaw = clampf(desired_yaw, -1.5, 1.5)
 	yaw_rate = lerpf(yaw_rate, desired_yaw, 1.0 - exp(-dt * 7.0))
 	heading += yaw_rate * dt
@@ -112,9 +134,16 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 	velocity.y = 0.0 if is_on_floor() else vertical - 24.0 * dt
 	rotation.y = heading
 	move_and_slide()
+	impact_feedback = move_toward(impact_feedback, 0, dt * 3)
+	for i in get_slide_collision_count():
+		var hit := get_slide_collision(i)
+		if absf(hit.get_normal().y) < .5:
+			impact_feedback = maxf(impact_feedback, clampf(absf(longitudinal) / 25, 0, 1))
 	speed = Vector2(velocity.x, velocity.z).length() * (-1.0 if longitudinal < -0.1 else 1.0)
 	slip = absf(lateral)
 	shift_timer = maxf(0, shift_timer - dt)
+	shift_feedback = move_toward(shift_feedback, 0, dt * 7)
+	var old_gear := gear
 	var ratio: Array[float] = [0.0, 3.10, 2.12, 1.55, 1.20, 0.98, 0.82]
 	if speed < -0.3:
 		gear = -1
@@ -132,7 +161,10 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 				shift_timer = 0.25
 	var target_rpm := 950.0 + throttle * 1700.0 if gear <= 0 else maxf(1100.0, absf(speed) / 2.05 * 60 * ratio[gear] * 3.4)
 	rpm = lerpf(rpm, clampf(target_rpm, 950, 7900), 1.0 - exp(-dt * 12))
+	if old_gear != gear and old_gear > 0:
+		shift_feedback = 1.0
 	var acceleration := (speed - previous_speed) / maxf(dt, 0.001)
+	acceleration_feedback = lerpf(acceleration_feedback, clampf(acceleration, -22, 14), 1 - exp(-dt * 5))
 	previous_speed = speed
 	var floor_pitch := 0.0
 	if is_on_floor():
@@ -144,6 +176,10 @@ func drive(dt: float, gas: float, stopping: float, turn: float, handbrake: bool,
 		wheel_nodes[i].rotation.x = wheel_rotations[i].x + wheel_roll
 		if "front" in wheel_nodes[i].name:
 			wheel_nodes[i].rotation.y = wheel_rotations[i].y - steering * steering_angle
+	if steering_wheel:
+		steering_wheel.rotation.z = -steering * 1.8
+	if dashboard:
+		dashboard.text = "%s   %03d\nRPM %04d" % ["R" if gear < 0 else "N" if gear == 0 else str(gear), roundi(absf(speed) * 3.6), roundi(rpm)]
 
 func is_on_floor_direction(forward: Vector3) -> float:
 	var normal := get_floor_normal()

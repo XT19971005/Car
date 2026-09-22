@@ -4,7 +4,7 @@ const Car = preload("res://scripts/arcade_car.gd")
 const Session = preload("res://scripts/race_session.gd")
 const Interface = preload("res://scripts/race_ui.gd")
 const Audio = preload("res://scripts/engine_audio.gd")
-const Catalog = preload("res://scripts/track_catalog.gd")
+const Catalog = preload("res://scripts/real_track_catalog.gd")
 enum State { MENU, COUNTDOWN, RACING, PAUSED, RESULTS }
 var state := State.MENU
 var before_pause := State.RACING
@@ -18,7 +18,13 @@ var session := Session.new()
 var selected_track := "monza"
 var countdown := 3.0
 var go_timer := 0.0
-var camera_mode := 0
+var camera_mode := 2
+var selected_vehicle := "v8"
+var reduced_motion := false
+var camera_time := 0.0
+var rear_viewport: SubViewport
+var rear_camera: Camera3D
+var rear_display: TextureRect
 var camera_yaw := 0.0
 var orbit := 0.0
 var mouse_drag := false
@@ -36,15 +42,16 @@ var gate_marker: Node3D
 
 func _ready() -> void:
 	test_mode = "--test-mode" in OS.get_cmdline_user_args()
-	tracks = Catalog.new().TRACKS
+	tracks = Catalog.new().get_tracks()
 	_load_preferences()
 	_configure_input()
 	_build_environment()
 	car = Car.new()
 	add_child(car)
+	car.configure_vehicle(selected_vehicle)
 	camera = Camera3D.new()
 	camera.fov = 65
-	camera.near = 0.08
+	camera.near = 0.025
 	camera.far = 3500
 	add_child(camera)
 	camera.current = true
@@ -60,12 +67,21 @@ func _ready() -> void:
 	ui.camera_requested.connect(switch_camera)
 	ui.volume_changed.connect(_set_volume)
 	ui.fullscreen_changed.connect(_set_fullscreen)
+	ui.vehicle_selected.connect(select_vehicle)
+	ui.cockpit_selected.connect(func(enabled: bool): camera_mode = 2 if enabled else 0; _update_camera(1, true))
+	ui.reduced_motion_changed.connect(func(enabled: bool): reduced_motion = enabled)
+	ui.cockpit_choice.set_pressed_no_signal(camera_mode == 2)
+	ui.reduced_motion.set_pressed_no_signal(reduced_motion)
+	for i in ui.vehicle_choice.item_count:
+		if ui.vehicle_choice.get_item_metadata(i) == selected_vehicle:
+			ui.vehicle_choice.select(i)
 	ui.volume_slider.set_value_no_signal(volume)
 	ui.fullscreen_toggle.set_pressed_no_signal(fullscreen)
 	_set_volume(volume)
 	_set_fullscreen(fullscreen)
 	audio = Audio.new()
 	add_child(audio)
+	_build_rear_view()
 	select_track(selected_track)
 	show_menu()
 	get_tree().auto_accept_quit = false
@@ -94,28 +110,35 @@ func _build_environment() -> void:
 	var environment := Environment.new()
 	var sky := Sky.new()
 	var sky_material := ProceduralSkyMaterial.new()
-	sky_material.sky_top_color = Color("526b78")
-	sky_material.sky_horizon_color = Color("d2bca1")
+	sky_material.sky_top_color = Color("6199c4")
+	sky_material.sky_horizon_color = Color("b6d1db")
 	sky_material.ground_horizon_color = Color("a1afa3")
 	sky_material.ground_bottom_color = Color("354f4b")
 	sky.sky_material = sky_material
 	environment.background_mode = Environment.BG_SKY
 	environment.sky = sky
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("a5bdc2")
-	environment.ambient_light_energy = 0.55
+	environment.ambient_light_color = Color("b4cbd1")
+	environment.ambient_light_energy = 0.35
 	environment.fog_enabled = true
-	environment.fog_light_color = Color("a6b6ae")
-	environment.fog_density = 0.0008
-	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	environment.fog_light_color = Color("bed1c9")
+	environment.fog_density = 0.00035
+	environment.tonemap_mode = Environment.TONE_MAPPER_ACES
+	environment.tonemap_exposure = 0.85
+	environment.ssao_enabled = true
+	environment.ssao_radius = 1.3
+	environment.ssao_intensity = 1.5
 	world.environment = environment
 	add_child(world)
 	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-26, -32, 0)
-	sun.light_color = Color("f3cca0")
-	sun.light_energy = 0.85
+	sun.rotation_degrees = Vector3(-38, -48, 0)
+	sun.light_color = Color("fff5df")
+	sun.light_energy = 1.0
+	sun.light_angular_distance = 1.2
 	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 160
+	sun.directional_shadow_max_distance = 220
+	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
+	sun.shadow_blur = 1.5
 	add_child(sun)
 
 func select_track(key: String) -> void:
@@ -127,7 +150,7 @@ func select_track(key: String) -> void:
 		track.queue_free()
 	track = Track.new()
 	add_child(track)
-	track.build(tracks[key].points)
+	track.build(tracks[key].points, key, tracks[key])
 	_build_gate_marker()
 	car.reset_at(track.points[0], track.tangent(0))
 	last_sample = track.sample(car.position)
@@ -135,9 +158,43 @@ func select_track(key: String) -> void:
 	_update_camera(1.0, true)
 
 func best_time() -> float:
-	return float(records.get(selected_track, 0.0))
+	return float(records.get(selected_track + ":" + selected_vehicle, 0.0))
+
+func select_vehicle(key: String) -> void:
+	selected_vehicle = key
+	car.configure_vehicle(key)
+	car.reset_at(track.points[0], track.tangent(0))
+	ui.vehicle_detail.text = "%s  /  %.3f m × %.3f m" % [car.profile.description, car.profile.length, car.profile.width]
+	ui.select_track(selected_track, tracks[selected_track], track, best_time())
+	_update_camera(1, true)
+
+func _build_rear_view() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	rear_viewport = SubViewport.new()
+	rear_viewport.size = Vector2i(384, 112)
+	rear_viewport.world_3d = get_world_3d()
+	rear_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	add_child(rear_viewport)
+	rear_camera = Camera3D.new()
+	rear_camera.fov = 70
+	rear_camera.far = 500
+	rear_viewport.add_child(rear_camera)
+	rear_camera.current = true
+	rear_display = TextureRect.new()
+	ui.hud.add_child(rear_display)
+	rear_display.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	rear_display.offset_left = -192
+	rear_display.offset_right = 192
+	rear_display.offset_top = 20
+	rear_display.offset_bottom = 132
+	rear_display.texture = rear_viewport.get_texture()
+	rear_display.flip_h = true
+	rear_display.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func start_race() -> void:
+	if audio:
+		audio.play_cue(700, .10)
 	session.reset(ui.lap_choice.get_selected_id())
 	record_this_race = false
 	car.reset_at(track.points[0], track.tangent(0))
@@ -223,7 +280,10 @@ func _notification(what: int) -> void:
 
 func _physics_process(dt: float) -> void:
 	if state == State.COUNTDOWN:
+		var previous_count := ceili(countdown)
 		countdown -= dt
+		if ceili(countdown) != previous_count:
+			audio.play_cue(1300 if countdown <= 0 else 700, .22 if countdown <= 0 else .10)
 		ui.countdown_label.text = str(maxi(1, ceili(countdown)))
 		if countdown <= 0:
 			state = State.RACING
@@ -231,17 +291,17 @@ func _physics_process(dt: float) -> void:
 			ui.countdown_label.text = "GO"
 	elif state == State.RACING:
 		last_sample = track.sample(car.position)
-		var offroad: bool = float(last_sample.distance) > Track.HALF_WIDTH + 0.85
+		var offroad: bool = float(last_sample.distance) > track.half_width + 0.85
 		car.drive(dt, Input.get_action_strength("accelerate"), Input.get_action_strength("brake"), Input.get_axis("left", "right"), Input.is_action_pressed("handbrake"), offroad)
 		last_sample = track.sample(car.position)
-		if float(last_sample.distance) > Track.HALF_WIDTH + 1.7:
+		if float(last_sample.distance) > track.half_width + 1.7:
 			offroad_time += dt
 			if offroad_time > 0.7:
 				session.valid = false
 		else:
 			offroad_time = 0.0
 		var moving_forward: bool = car.velocity.dot(last_sample.tangent) > 0.1
-		var event: String = session.tick(dt, float(last_sample.progress), float(last_sample.distance) <= Track.HALF_WIDTH + 1.0, moving_forward)
+		var event: String = session.tick(dt, float(last_sample.progress), float(last_sample.distance) <= track.half_width + 1.0, moving_forward)
 		if event == "lap" or event == "finish":
 			_save_record()
 			message = "完成一圈  " + Session.time_text(session.laps.back().time)
@@ -264,11 +324,17 @@ func _physics_process(dt: float) -> void:
 		audio.throttle = car.throttle
 		audio.speed = car.speed
 		audio.slip = car.slip
+		audio.cylinders = int(car.profile.cylinders)
+		audio.engine_type = selected_vehicle
+		audio.shift = car.shift_feedback
+		audio.impact = car.impact_feedback
+		audio.cockpit = camera_mode == 2
+		audio.rumble = 1.0 if last_sample and float(last_sample.distance) > track.half_width - .25 else 0.0
 
 func _save_record() -> void:
 	var entry: Dictionary = session.laps.back()
 	if entry.valid and (best_time() <= 0 or float(entry.time) < best_time()):
-		records[selected_track] = entry.time
+		records[selected_track + ":" + selected_vehicle] = entry.time
 		record_this_race = true
 		_save_preferences()
 
@@ -285,7 +351,7 @@ func _update_hud() -> void:
 	var status := "检查点 %02d / %02d   ·   %.0f m" % [session.next_gate, Session.GATES, car.position.distance_to(gate.point)]
 	if car.velocity.dot(last_sample.tangent) < -2:
 		status = "逆向行驶 · 请沿赛道方向前进"
-	elif float(last_sample.distance) > Track.HALF_WIDTH + 0.85:
+	elif float(last_sample.distance) > track.half_width + 0.85:
 		status = "驶离赛道 · 松开油门并回到路面"
 	elif not session.valid:
 		status = "练习圈 · 下一圈可重新挑战纪录"
@@ -298,6 +364,7 @@ func _process(dt: float) -> void:
 		_update_camera(dt)
 
 func _update_camera(dt: float, snap := false) -> void:
+	camera_time += dt
 	if not mouse_drag:
 		orbit = lerpf(orbit, 0, 1 - exp(-dt * 5))
 	var blend := 1.0 if snap else 1 - exp(-dt * 10)
@@ -306,13 +373,24 @@ func _update_camera(dt: float, snap := false) -> void:
 	var offset := Vector3(0, 3.2, -7.5) if camera_mode == 0 else Vector3(0, 5.0, -12.0)
 	car.body_visual.visible = true
 	if camera_mode == 2:
-		camera.position = car.to_global(Vector3(0, 1.08, 1.05))
-		camera.look_at(car.to_global(Vector3(0, 1.1, 30.0)))
+		camera.position = car.cockpit_anchor.global_position
+		var curb := 1.0 if last_sample and float(last_sample.distance) > track.half_width - .25 else .12
+		var feedback := 0.0 if reduced_motion else 1.0
+		camera.position.y += sin(camera_time * 31) * minf(absf(car.speed) / 60, 1.0) * .009 * curb * feedback
+		camera.position += car.global_basis.z * car.acceleration_feedback * .0008 * feedback
+		camera.look_at(camera.position + car.body_visual.global_basis.z * 50, Vector3.UP)
+		camera.rotation.z += (-car.yaw_rate * .012 + sin(camera_time * 42) * car.impact_feedback * .015) * feedback
+		camera.rotation.x += car.shift_feedback * .008 * feedback
 	else:
 		var desired: Vector3 = car.position + basis_yaw * offset
 		camera.position = desired if snap else camera.position.lerp(desired, blend)
 		camera.look_at(car.position + Vector3.UP * 0.9 + Vector3(sin(camera_yaw), 0, cos(camera_yaw)) * 3.0)
-	camera.fov = 65
+	camera.fov = 72 if camera_mode == 2 else 65 + minf(absf(car.speed) * .065, 5.0)
+	if rear_camera:
+		rear_display.visible = camera_mode == 2
+		rear_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if camera_mode == 2 and state in [State.COUNTDOWN, State.RACING] else SubViewport.UPDATE_DISABLED
+		rear_camera.position = car.to_global(Vector3(0, 1.2, -2.7))
+		rear_camera.look_at(car.to_global(Vector3(0, 1.15, -40)))
 
 func _load_preferences() -> void:
 	if test_mode:
@@ -320,7 +398,12 @@ func _load_preferences() -> void:
 	if preferences.load("user://driver.cfg") == OK:
 		volume = clampf(float(preferences.get_value("settings", "volume", 0.7)), 0, 1)
 		fullscreen = bool(preferences.get_value("settings", "fullscreen", false))
-		var saved: Variant = preferences.get_value("records", "arcade_v1", {})
+		selected_vehicle = str(preferences.get_value("settings", "vehicle", "v8"))
+		if not preload("res://scripts/car_catalog.gd").CARS.has(selected_vehicle):
+			selected_vehicle = "v8"
+		camera_mode = clampi(int(preferences.get_value("settings", "camera", 2)), 0, 2)
+		reduced_motion = bool(preferences.get_value("settings", "reduced_motion", false))
+		var saved: Variant = preferences.get_value("records", "gt_v2", {})
 		if saved is Dictionary:
 			records = saved
 
@@ -329,7 +412,10 @@ func _save_preferences() -> void:
 		return
 	preferences.set_value("settings", "volume", volume)
 	preferences.set_value("settings", "fullscreen", fullscreen)
-	preferences.set_value("records", "arcade_v1", records)
+	preferences.set_value("settings", "vehicle", selected_vehicle)
+	preferences.set_value("settings", "camera", camera_mode)
+	preferences.set_value("settings", "reduced_motion", reduced_motion)
+	preferences.set_value("records", "gt_v2", records)
 	var error := preferences.save("user://driver.cfg")
 	if error != OK:
 		push_warning("Could not save driver preferences: %s" % error_string(error))
@@ -347,27 +433,6 @@ func _set_fullscreen(value: bool) -> void:
 	_save_preferences()
 
 func _build_gate_marker() -> void:
+	# Checkpoints remain logical; a racing circuit has no floating arcade gate props.
 	gate_marker = Node3D.new()
 	track.add_child(gate_marker)
-	for side in [-1, 1]:
-		var post := MeshInstance3D.new()
-		var mesh := BoxMesh.new()
-		mesh.size = Vector3(0.25, 4, 0.25)
-		post.mesh = mesh
-		post.material_override = Track.material(Color("ecab65"))
-		post.position = Vector3(side * 9, 2, 0)
-		gate_marker.add_child(post)
-	var flag := Label3D.new()
-	flag.text = "检查点"
-	flag.font_size = 64
-	var font := SystemFont.new()
-	font.font_names = PackedStringArray(["Microsoft YaHei"])
-	flag.font = font
-	flag.pixel_size = 0.025
-	flag.position.y = 4
-	flag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	flag.modulate = Color("ffd19b")
-	gate_marker.add_child(flag)
-	var gate: Dictionary = track.at_progress(1.0 / Session.GATES)
-	gate_marker.position = gate.point
-	gate_marker.rotation.y = atan2(gate.tangent.x, gate.tangent.z)

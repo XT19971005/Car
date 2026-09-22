@@ -6,12 +6,21 @@ var distances := PackedFloat32Array()
 var length := 0.0
 var road_material: StandardMaterial3D
 var segment_grid: Dictionary = {}
+var circuit_key := ""
+var park_material: ShaderMaterial
+var circuit_data: Dictionary = {}
+var half_width := HALF_WIDTH
 
-func build(source: PackedVector3Array) -> void:
+func build(source: PackedVector3Array, key := "", data: Dictionary = {}) -> void:
+	circuit_key = key
+	circuit_data = data
+	half_width = float(data.get("nominal_width_m", 16.0)) * .5
+	park_material = ShaderMaterial.new()
+	park_material.shader = preload("res://assets/materials/park_grass.gdshader")
 	# Corner cutting avoids Catmull-Rom overshoot at sparse hairpins. Overshoot can
 	# fold a 16m ribbon back into itself and create an invisible collision wedge.
 	points = source.duplicate()
-	for iteration in 3:
+	for iteration in (2 if not data.is_empty() else 3):
 		var rounded := PackedVector3Array()
 		for i in points.size():
 			var a := points[i]
@@ -24,23 +33,25 @@ func build(source: PackedVector3Array) -> void:
 		length += points[i].distance_to(points[(i + 1) % points.size()])
 		distances.append(length)
 	_build_segment_grid()
-	_ribbon(-HALF_WIDTH, HALF_WIDTH, Color("343d45"), 0.0, true)
-	_ribbon(-HALF_WIDTH - 0.85, -HALF_WIDTH, Color("eee6d7"), 0.035, true, true)
-	_ribbon(HALF_WIDTH, HALF_WIDTH + 0.85, Color("eee6d7"), 0.035, true, true)
+	_ribbon(-half_width, half_width, Color("343d45"), 0.0, true)
+	_ribbon(-half_width - 0.85, -half_width, Color("eee6d7"), 0.035, true, true)
+	_ribbon(half_width, half_width + 0.85, Color("eee6d7"), 0.035, true, true)
 	# Small verge cells can be omitted where a neighbouring bend needs clearance.
 	for side in [-1.0, 1.0]:
 		for strip in 7:
-			var inner: float = (HALF_WIDTH + 0.85 + strip * 3.8) * side
-			var outer: float = (HALF_WIDTH + 0.85 + (strip + 1) * 3.8) * side
+			var inner: float = (half_width + 0.85 + strip * 3.8) * side
+			var outer: float = (half_width + 0.85 + (strip + 1) * 3.8) * side
 			_ribbon(minf(inner, outer), maxf(inner, outer), Color("687b68"), -0.06, true, false, true)
-	_ribbon(-7.8, -7.65, Color("e8e6d6"), 0.02, false)
-	_ribbon(7.65, 7.8, Color("e8e6d6"), 0.02, false)
+	_ribbon(-half_width + .2, -half_width + .35, Color("e8e6d6"), 0.02, false)
+	_ribbon(half_width - .35, half_width - .2, Color("e8e6d6"), 0.02, false)
 	var ground := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(6000, 6000)
 	ground.mesh = plane
 	ground.position.y = -1.0
 	ground.material_override = material(Color("576d60"))
+	if not circuit_data.is_empty():
+		ground.material_override = park_material
 	add_child(ground)
 	var floor_body := StaticBody3D.new()
 	var floor_shape := CollisionShape3D.new()
@@ -77,7 +88,14 @@ func _ribbon(left: float, right: float, color: Color, lift: float, collides: boo
 					break
 			if blocked:
 				continue
-		surface.set_color(Color("d95237") if curb and i % 2 == 0 else color)
+		var surface_color := Color("d95237") if curb and i % 2 == 0 else color
+		if curb and not circuit_data.is_empty():
+			var turn := absf(tangent(posmod(i - 5, points.size())).signed_angle_to(tangent((i + 5) % points.size()), Vector3.UP))
+			if turn < .025:
+				surface_color = Color("697c3e")
+			elif circuit_key == "spa" and i % 2 != 0:
+				surface_color = Color("eed347")
+		surface.set_color(surface_color)
 		# Godot clockwise front faces when viewed from above.
 		for vertex in [a, c, b, a, d, c]:
 			surface.add_vertex(vertex)
@@ -94,6 +112,12 @@ func _ribbon(left: float, right: float, color: Color, lift: float, collides: boo
 	mat.vertex_color_is_srgb = true
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	instance.material_override = mat
+	if not circuit_data.is_empty() and is_equal_approx(left, -half_width) and is_equal_approx(right, half_width):
+		var asphalt := ShaderMaterial.new()
+		asphalt.shader = preload("res://assets/materials/circuit_asphalt.gdshader")
+		instance.material_override = asphalt
+	if verge and not circuit_data.is_empty():
+		instance.material_override = park_material
 	add_child(instance)
 	if collides:
 		instance.create_trimesh_collision()
@@ -123,7 +147,7 @@ func _over_other_road(position: Vector3, own_segment: int) -> bool:
 		var offset := Vector2(position.x, position.z) - a
 		var line := b - a
 		var fraction := clampf(offset.dot(line) / maxf(line.length_squared(), 0.001), 0, 1)
-		if (offset - line * fraction).length_squared() < pow(HALF_WIDTH + 1.8, 2):
+		if (offset - line * fraction).length_squared() < pow(half_width + 1.8, 2):
 			return true
 	return false
 
@@ -176,8 +200,8 @@ func _decorate() -> void:
 	var yaw := atan2(t.x, t.z)
 	var right := Vector3(t.z, 0, -t.x).normalized()
 	for row in 2:
-		for column in 16:
-			_box(start + right * (column - 7.5) + t * (row * 0.65) + Vector3.UP * 0.035, Vector3(1, 0.025, 0.65), Color.WHITE if (row + column) % 2 == 0 else Color("151e28"), yaw)
+		for column in roundi(half_width * 2):
+			_box(start + right * (column - half_width + .5) + t * (row * 0.65) + Vector3.UP * 0.035, Vector3(1, 0.025, 0.65), Color.WHITE if (row + column) % 2 == 0 else Color("151e28"), yaw)
 	var gantry := start + t * 18.0
 	for side in [-1, 1]:
 		_box(gantry + right * 10.0 * side + Vector3.UP * 3, Vector3(0.4, 6, 0.4), Color("273746"), yaw, true)
@@ -189,6 +213,11 @@ func _decorate() -> void:
 	banner.position = gantry + Vector3.UP * 6.2 - t * 0.28
 	banner.rotation.y = yaw + PI
 	add_child(banner)
+	if not circuit_data.is_empty():
+		var scenery := preload("res://scripts/venue_scenery.gd").new()
+		add_child(scenery)
+		scenery.build(self)
+		return
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 2718
 	for i in range(0, points.size(), 10):

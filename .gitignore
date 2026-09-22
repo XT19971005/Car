@@ -10,3 +10,6 @@ Thumbs.db
 .local-backups/
 **/.godot/
 **/test-output/
+*.blend1
+art/build_logs/
+art/reference_data/*-osm.xml

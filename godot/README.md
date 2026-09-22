@@ -1,46 +1,36 @@
-# Apex Circuit · Godot 主工程
+# Apex Circuit — GT Experience
 
-## 运行
+直接用 Godot 打开 `project.godot` 并按 F5，或双击 `启动游戏.cmd`。
 
-双击 `启动游戏.cmd`，或在 Godot 中导入此目录的 `project.godot` 后按 F5。当前在 Windows Godot 4.7.2 上验证。
+## 当前可玩内容
 
-默认选择蒙扎，自动变速。以“跑完一场、看成绩、再跑一场”为完整单机循环。
+- 蒙扎、斯帕、银石三个真实地理布局的米制场景，地形、维修区、看台、森林与安全设施。
+- V8 Endurance、R6 Heritage、V6 Apex 三款原创低多边形 GT，独立比例、驾驶参数和发动机音色。
+- 真实车内视角、转动方向盘、动态仪表、实时后视镜，以及近/远追车视角。
+- 1/3/5 圈单人计时赛：倒计时、24 个顺序检查点、三段计时、结算、分车型最佳成绩、暂停/重开。
+- 键盘与手柄、音量/全屏/减少晃动设置，自动变速、辅助抓地，轮胎/路肩/碰撞/换挡声音反馈。
 
-## 操作
+操作：W/S 加速与刹车倒车，A/D 转向，空格手刹，C 切换视角，R 复位，Esc 暂停。手柄 RT/LT 为油门/刹车，左摇杆转向，Start 暂停。出界或复位会使当前圈无法计入最佳成绩。
 
-- W / 上：加速；S / 下：刹车，停下后倒车。
-- A D / 左右：转向；空格：手刹。
-- C：近追车、远追车、引擎盖视角轮换；追车视角可按住鼠标左键环视。
-- R：回到最后通过的检查点，当前圈标记为练习圈。
-- Esc：暂停/继续；切出游戏自动暂停。
-- 手柄：RT 油门、LT 刹车、左摇杆转向、A 手刹、Y 视角、Back 复位、Start 暂停。菜单支持方向键/手柄导航。手柄映射已接入，尚未使用实体手柄验收。
+## 工程入口
 
-## 规则
+正式游戏在 `godot/`；Blender 源文件在 `art/source_blender/`；实拍在 `art/previews/`；建模与验证脚本在 `tools/`。早期网页原型保留供历史参考，见 `README-web-prototype.md`。
 
-24 个检查点必须按正向依次经过，终点对应第 24 个检查点。分段设在 8 / 16 / 24。倒计时与暂停不计入比赛时间。路外无法通过检查点；持续离开路面超过 0.7 秒或使用复位会使当前圈不计最佳，但仍可以完成比赛。漏过检查点时按 R 返回最后有效检查点。
+[美术与比例依据](../art/README.md) · [自检记录](../art/VALIDATION.md) · [第三方数据声明](THIRD_PARTY_NOTICES.md)
 
-有效圈结束立即保存该路线最佳成绩，不必等整场比赛结束。路线/操控变化后的记录隔离在 `arcade_v1` 存档键中。
+## 实际范围
 
-## 代码边界
+本版是完整的单人计时赛循环。没有 AI 对手、联网、改装、天气系统或专业轮胎仿真。驾驶偏易上手；画面采用原创低多边形风格。场景由真实经纬度和地形数据构建，但道路宽度、部分建筑高度、护栏及局部设施仍为近似；三车是原创设计，不能称为 ACC 等价产品或测绘级一比一复刻。
 
-- `scripts/main.gd`：菜单、倒计时、比赛、暂停、结算状态与输入、存档。
-- `scripts/arcade_car.gd`：CharacterBody3D 辅助街机驾驶、圆滑车身碰撞体、轮组动画、自动档位与转速。
-- `scripts/track_world.gd`：由原型中心线一次构建连续道路、同源碰撞、场景和准确线段投影。
-- `scripts/track_catalog.gd`：原有九条路线中心线。
-- `scripts/race_session.gd`：不依赖场景的顺序检查点、计圈、分段和有效成绩。
-- `scripts/race_ui.gd` / `track_map.gd`：中文界面和赛道图。
-- `scripts/engine_audio.gd`：相位连续的引擎合成、速度和滑移声。
+## 重建与验证
 
-1 Godot 单位 = 1 米，速度显示 ×3.6。渲染使用 Compatibility；物理使用 Godot 内置 Jolt。道路为简化原型，未声称真实赛道精度。
+验证环境：Windows、Godot 4.7.2、Forward+、Jolt、RTX 4070。美术生成：Blender 4.5。
 
-## 测试
+```powershell
+./tools/build-art.ps1
+./tools/test-godot.ps1 -GodotPath '<Godot exe>' -AllTracks -AllCars
+```
 
-在仓库根目录使用 `tools/test-godot.ps1 -GodotPath <exe> -AllTracks`。
+其他专项测试：Godot 使用 `--headless --path godot --script res://tests/test_input.gd -- --test-mode` 或 `test_audio.gd`。`test_render.gd` 与 `capture_gt.gd` 需要图形渲染，不加 `--headless`。
 
-`tests/test_race.gd` 覆盖计圈、抄近路、逆行、复位、暂停、驾驶及九条赛道加载。`tests/drive_lap.gd` 使用真实移动与碰撞自动驾驶一整圈，可传 `--track=spa` 等参数。`tests/capture.gd` 输出菜单、比赛、暂停、结算截图；结算截图使用演示数据，仅用于布局检查。
-
-所有测试加 `-- --test-mode`，不会覆盖用户存档。测试输出位于 `test-output/`。Headless 模式跳过音频设备，不代表音频听感验收。
-
-## 范围
-
-这一版完成单人计时赛。未包含 AI 对手、多人联网、车辆改装、真实座舱、雨天、真实轮胎/悬挂仿真。美术目前是程序化低多边形场景与现有 Kenney 车型，后续可在相同轮廓/色调规范下替换美术资源。
+命令示例从仓库根目录运行。游戏存档位于 Godot user://，成绩按 gt_v2/赛道/车辆隔离。

@@ -8,6 +8,9 @@ signal menu_requested
 signal camera_requested
 signal volume_changed(value: float)
 signal fullscreen_changed(value: bool)
+signal vehicle_selected(key: String)
+signal cockpit_selected(enabled: bool)
+signal reduced_motion_changed(enabled: bool)
 const MapScript = preload("res://scripts/track_map.gd")
 const Session = preload("res://scripts/race_session.gd")
 const INK := Color("101b28")
@@ -38,6 +41,10 @@ var status_label: Label
 var countdown_label: Label
 var rpm_bar: ProgressBar
 var progress_bar: ProgressBar
+var vehicle_choice: OptionButton
+var cockpit_choice: CheckButton
+var reduced_motion: CheckButton
+var vehicle_detail: Label
 
 func _ready() -> void:
 	layer = 10
@@ -111,9 +118,14 @@ func _build_menu() -> void:
 	columns.add_theme_constant_override("separation", 32)
 	margin.add_child(columns)
 	var left := VBoxContainer.new()
-	left.custom_minimum_size.x = 530
+	left.custom_minimum_size.x = 500
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_theme_constant_override("separation", 12)
-	columns.add_child(left)
+	var menu_scroll := ScrollContainer.new()
+	menu_scroll.custom_minimum_size.x = 530
+	menu_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	columns.add_child(menu_scroll)
+	menu_scroll.add_child(left)
 	label(left, "APEX / CIRCUIT", 36)
 	label(left, "找到节奏，刷新你的下一圈。", 20, MUTED)
 	label(left, "01  选择赛道", 18, ACCENT)
@@ -122,7 +134,17 @@ func _build_menu() -> void:
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 	left.add_child(grid)
-	label(left, "02  比赛设置", 18, ACCENT)
+	label(left, "02  选择赛车", 18, ACCENT)
+	vehicle_choice = OptionButton.new()
+	vehicle_choice.custom_minimum_size.y = 46
+	for key: String in preload("res://scripts/car_catalog.gd").CARS:
+		var data: Dictionary = preload("res://scripts/car_catalog.gd").CARS[key]
+		vehicle_choice.add_item(data.name)
+		vehicle_choice.set_item_metadata(vehicle_choice.item_count - 1, key)
+	vehicle_choice.item_selected.connect(func(index: int): vehicle_selected.emit(vehicle_choice.get_item_metadata(index)))
+	left.add_child(vehicle_choice)
+	vehicle_detail = label(left, "前置 V8 · 稳定长轴距", 16, MUTED)
+	label(left, "03  比赛设置", 18, ACCENT)
 	var settings := HBoxContainer.new()
 	settings.add_theme_constant_override("separation", 14)
 	left.add_child(settings)
@@ -136,6 +158,17 @@ func _build_menu() -> void:
 	fullscreen_toggle.text = "全屏"
 	fullscreen_toggle.toggled.connect(func(value: bool): fullscreen_changed.emit(value))
 	settings.add_child(fullscreen_toggle)
+	var camera_row := HBoxContainer.new()
+	left.add_child(camera_row)
+	cockpit_choice = CheckButton.new()
+	cockpit_choice.text = "车内视角"
+	cockpit_choice.button_pressed = true
+	cockpit_choice.toggled.connect(func(enabled: bool): cockpit_selected.emit(enabled))
+	camera_row.add_child(cockpit_choice)
+	reduced_motion = CheckButton.new()
+	reduced_motion.text = "减少镜头晃动"
+	reduced_motion.toggled.connect(func(enabled: bool): reduced_motion_changed.emit(enabled))
+	camera_row.add_child(reduced_motion)
 	var audio_row := HBoxContainer.new()
 	left.add_child(audio_row)
 	label(audio_row, "音量  ", 17, MUTED)
@@ -166,7 +199,8 @@ func _build_menu() -> void:
 	preview.custom_minimum_size = Vector2(260, 240)
 	map_panel.add_child(preview)
 	track_best = label(right, "", 19, ACCENT)
-	label(right, "CLUBSPORT  /  自动变速 · 辅助抓地", 18)
+	label(right, "GT EXPERIENCE  /  自动变速 · 辅助抓地", 18)
+	label(right, "地图 © OpenStreetMap contributors · ODbL", 12, MUTED)
 	label(right, "完成所有检查点即可计圈。\n驶离路面或使用复位，本圈不计最佳成绩。", 15, MUTED)
 	menu.set_meta("grid", grid)
 
@@ -174,13 +208,13 @@ func populate_tracks(catalog: Dictionary) -> void:
 	var grid: GridContainer = menu.get_meta("grid")
 	for key: String in catalog:
 		var item := button(grid, catalog[key].name, func(): track_selected.emit(key))
-		item.custom_minimum_size = Vector2(170, 54)
+		item.custom_minimum_size = Vector2(160, 54)
 		item.add_theme_font_size_override("font_size", 16)
 		track_buttons[key] = item
 
 func select_track(key: String, data: Dictionary, world: Node3D, best: float) -> void:
 	track_title.text = data.name
-	track_detail.text = "%s  /  原型路线 %.2f km" % [data.region, world.length / 1000.0]
+	track_detail.text = "%s  /  %.3f km · 米制场景" % [data.region, world.length / 1000.0]
 	track_best.text = "个人最佳   " + Session.time_text(best)
 	preview.configure(world.points)
 	preview.driver = Vector2(world.points[0].x, world.points[0].z)

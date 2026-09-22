@@ -1,4 +1,4 @@
-param([Parameter(Mandatory = $true)][string]$GodotPath, [switch]$AllTracks)
+param([Parameter(Mandatory = $true)][string]$GodotPath, [switch]$AllTracks, [switch]$AllCars)
 $ErrorActionPreference = 'Stop'
 $nativeProject = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\godot'))
 $outputDirectory = Join-Path $nativeProject 'test-output'
@@ -14,9 +14,13 @@ function Invoke-RaceTest([string]$Script, [string]$Name, [string]$Success, [stri
 }
 $import = Start-Process -FilePath $GodotPath -ArgumentList @('--headless', '--editor', '--import', '--path', ('"' + $nativeProject + '"'), '--quit', '--log-file', ('"' + (Join-Path $outputDirectory 'import.log') + '"')) -WindowStyle Hidden -PassThru -Wait
 if ($import.ExitCode -ne 0) { throw 'Import failed' }
-Invoke-RaceTest 'res://tests/test_race.gd' 'regression' 'RESULT: 28 checks, 0 failures'
+Invoke-RaceTest 'res://tests/test_race.gd' 'regression' 'RESULT: 32 checks, 0 failures'
 $tracks = @('monza')
-if ($AllTracks) { $tracks = @('monza', 'spa', 'silverstone', 'nurburgring', 'suzuka', 'imola', 'redbull', 'bathurst', 'laguna') }
+if ($AllTracks) { $tracks = @('monza', 'spa', 'silverstone') }
+$cars = @('v8')
+if ($AllCars) { $cars = @('v8', 'r6', 'v6') }
 foreach ($track in $tracks) {
-    Invoke-RaceTest 'res://tests/drive_lap.gd' ('drive-' + $track) ('DRIVE PASS: track=' + $track) @('--track=' + $track)
+    foreach ($car in $cars) {
+        Invoke-RaceTest 'res://tests/drive_lap.gd' ('drive-' + $track + '-' + $car) ('DRIVE PASS: track=' + $track) @('--track=' + $track, '--car=' + $car)
+    }
 }
